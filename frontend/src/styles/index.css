@@ -1,0 +1,99 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Noto Sans SC', system-ui, sans-serif;
+
+  --color-brand-50: #f0f7f4;
+  --color-brand-100: #dcefe6;
+  --color-brand-200: #b8dfc8;
+  --color-brand-300: #8cc9a6;
+  --color-brand-400: #5aad82;
+  --color-brand-500: #3a8f64;
+  --color-brand-600: #2d7351;
+  --color-brand-700: #255c42;
+  --color-brand-800: #204936;
+  --color-brand-900: #1b3d2e;
+
+  --color-ink-50: #f8f9fa;
+  --color-ink-100: #f1f3f5;
+  --color-ink-200: #e9ecef;
+  --color-ink-300: #dee2e6;
+  --color-ink-400: #ced4da;
+  --color-ink-500: #adb5bd;
+  --color-ink-600: #868e96;
+  --color-ink-700: #495057;
+  --color-ink-800: #343a40;
+  --color-ink-900: #212529;
+
+  --color-warm-50: #fdf8f3;
+  --color-warm-100: #f5ebe0;
+  --color-warm-200: #ead5c0;
+  --color-warm-300: #d4b896;
+}
+
+@layer base {
+  body {
+    @apply bg-ink-50 font-sans text-ink-800 antialiased;
+  }
+}
+
+@layer components {
+  .card-shadow {
+    box-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.06),
+      0 1px 2px rgba(0, 0, 0, 0.04);
+    transition:
+      box-shadow 0.3s ease,
+      transform 0.3s ease;
+  }
+
+  .card-shadow:hover {
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.1),
+      0 4px 8px rgba(0, 0, 0, 0.04);
+    transform: translateY(-2px);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #3a8f64 0%, #2d7351 100%);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2d7351 0%, #255c42 100%);
+  }
+
+  .filter-pill {
+    transition: all 0.2s ease;
+  }
+
+  .filter-pill.active {
+    @apply bg-brand-500 text-white;
+  }
+
+  .filter-pill:not(.active):hover {
+    @apply bg-ink-100;
+  }
+
+  .sidebar-card {
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+  }
+
+  .company-logo-placeholder {
+    background: linear-gradient(135deg, #f0f7f4 0%, #dcefe6 100%);
+  }
+
+  .tag-online {
+    background: #e8f4f8;
+    color: #0c7b93;
+  }
+
+  .tag-offline {
+    background: #fef3e8;
+    color: #c76a1e;
+  }
+
+  .tag-hybrid {
+    background: #f0e8f8;
+    color: #6b4c9a;
+  }
+}
