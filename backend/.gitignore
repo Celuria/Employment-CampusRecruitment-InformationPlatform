@@ -1,4 +1,8 @@
-# 编译产物
+# =============================================================================
+# Go 后端 Git 忽略规则
+# =============================================================================
+
+# --- 编译产物 ---
 /bin/
 /dist/
 *.exe
@@ -6,33 +10,54 @@
 *.dll
 *.so
 *.dylib
+/server
+/cmd/server/server
+/cmd/sync/sync
 
-# 测试
+# --- 测试与覆盖率 ---
 *.test
 *.out
 coverage.html
+coverage.out
+*.coverprofile
 
-# 依赖
+# --- 依赖 ---
 /vendor/
 
-# 日志
+# --- 日志 ---
 /logs/
 *.log
 
-# 环境配置（勿提交密钥）
+# --- 环境配置（勿提交密钥）---
 .env
 .env.local
+.env.*.local
+!.env.example
 
-# IDE
+# 本地覆盖配置（含数据库密码、JWT Secret 等）
+config/config.local.yaml
+config/*.local.yaml
+config/*.override.yaml
+
+# --- 爬虫 / 同步调试临时文件 ---
+tmp/
+tmp_*
+*.tmp
+
+# --- IDE ---
 .idea/
 .vscode/
 *.swp
 *.swo
 
-# OS
+# --- 操作系统 ---
 .DS_Store
 Thumbs.db
 
-# Go workspace
+# --- Go workspace ---
 go.work
 go.work.sum
+
+# --- 热重载工具缓存 ---
+tmp/
+.air.toml.bak

@@ -1,1 +1,48 @@
+# =============================================================================
+# 就业中心校招信息平台 — 根目录 Git 忽略规则
+# =============================================================================
+
+# --- 参考设计稿（体积较大，本地保留即可）---
 /校招平台 Web 端 UI 设计.html
+
+# --- 操作系统 ---
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- IDE / 编辑器 ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# --- 环境变量与密钥（保留 *.example 模板）---
+.env
+.env.local
+.env.*.local
+!.env.example
+!**/.env.example
+
+# --- 日志 ---
+*.log
+logs/
+
+# --- 临时 / 调试产物 ---
+tmp/
+*.tmp
+**/tmp_*
+*.bak
+
+# --- 依赖目录（子项目各自也有规则，此处兜底）---
+node_modules/
+vendor/
+
+# --- 构建产物（子项目各自也有规则，此处兜底）---
+dist/
+build/
+bin/
