@@ -1,0 +1,2 @@
+-- 就业中心校招信息平台 初始化 DDL
+-- 完整脚本请使用: scripts/init_database.sql

@@ -1,5 +1,5 @@
 import { get, put } from '../request'
-import type { UserInfo, UserPreference } from '@/types'
+import type { UserInfo, UserPreference, UpdateProfileForm } from '@/types'
 
 /** 获取当前用户资料 */
 export function getProfileApi() {
@@ -7,7 +7,7 @@ export function getProfileApi() {
 }
 
 /** 更新当前用户资料 */
-export function updateProfileApi(data: Partial<UserInfo>) {
+export function updateProfileApi(data: UpdateProfileForm) {
   return put<UserInfo>('/users/me', data)
 }
 

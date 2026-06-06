@@ -7,7 +7,7 @@ export function loginApi(data: LoginForm) {
 }
 
 /** 用户注册 */
-export function registerApi(data: RegisterForm) {
+export function registerApi(data: Omit<RegisterForm, 'confirmPassword'>) {
   return post<void>('/auth/register', data)
 }
 

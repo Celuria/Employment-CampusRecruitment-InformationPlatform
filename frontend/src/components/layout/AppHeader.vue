@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores'
 import { APP_NAME } from '@/constants'
 
@@ -41,6 +42,23 @@ function goProfile() {
     return
   }
   router.push('/profile')
+}
+
+async function handleLogout() {
+  await authStore.logout()
+  ElMessage.success('已退出登录')
+  router.push('/login')
+}
+
+function handleUserCommand(command: string) {
+  if (command === 'profile') goProfile()
+  if (command === 'logout') handleLogout()
+}
+
+function displayName() {
+  const info = authStore.userInfo
+  if (!info) return '用户'
+  return info.name || info.username
 }
 </script>
 
@@ -98,26 +116,31 @@ function goProfile() {
             </svg>
             <span class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
           </button>
-          <button
-            type="button"
-            class="flex items-center gap-3 border-l border-ink-200 pl-4"
-            @click="goProfile"
-          >
-            <div class="text-right">
-              <p class="text-sm font-semibold text-ink-800">
-                {{ authStore.userInfo?.name || '用户' }}
-              </p>
-              <p class="text-xs text-ink-500">
-                {{ authStore.userInfo?.college || '学院' }} ·
-                {{ authStore.userInfo?.grade || '年级' }}
-              </p>
-            </div>
-            <div
-              class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-200 bg-brand-100 text-sm font-semibold text-brand-700"
+          <el-dropdown trigger="click" @command="handleUserCommand">
+            <button
+              type="button"
+              class="flex items-center gap-3 border-l border-ink-200 pl-4 outline-none"
             >
-              {{ (authStore.userInfo?.name || 'U').charAt(0) }}
-            </div>
-          </button>
+              <div class="text-right">
+                <p class="text-sm font-semibold text-ink-800">{{ displayName() }}</p>
+                <p class="text-xs text-ink-500">
+                  {{ authStore.userInfo?.college || '完善资料' }}
+                  <template v-if="authStore.userInfo?.grade"> · {{ authStore.userInfo.grade }}</template>
+                </p>
+              </div>
+              <div
+                class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-200 bg-brand-100 text-sm font-semibold text-brand-700"
+              >
+                {{ displayName().charAt(0).toUpperCase() }}
+              </div>
+            </button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </template>
         <template v-else>
           <RouterLink

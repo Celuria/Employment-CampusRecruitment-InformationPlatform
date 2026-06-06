@@ -1,0 +1,44 @@
+server:
+  port: 8080
+  mode: debug # debug | release | test
+
+database:
+  host: 127.0.0.1
+  port: 3306
+  user: employ_user
+  password: "123456"
+  dbname: campus_recruitment
+  charset: utf8mb4
+  max_idle_conns: 10
+  max_open_conns: 100
+  auto_migrate: false  # 已用 scripts/init_database.sql 建表时请保持 false
+
+jwt:
+  secret: change-me-in-production
+  expire_hours: 2
+  remember_expire_hours: 168
+
+log:
+  level: info # debug | info | warn | error
+  filename: logs/app.log
+  max_size: 100
+  max_backups: 30
+  max_age: 30
+
+cors:
+  allow_origins:
+    - http://localhost:5173
+  allow_methods:
+    - GET
+    - POST
+    - PUT
+    - PATCH
+    - DELETE
+    - OPTIONS
+  allow_headers:
+    - Authorization
+    - Content-Type
+
+auth:
+  max_login_attempts: 5
+  lock_minutes: 15
