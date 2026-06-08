@@ -76,4 +76,8 @@ export function del<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
   return request.delete(url, config)
 }
 
+export function patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+  return request.patch(url, data, config)
+}
+
 export default request

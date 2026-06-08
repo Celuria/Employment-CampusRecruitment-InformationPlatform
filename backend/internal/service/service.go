@@ -35,7 +35,7 @@ func NewServices(db *gorm.DB, cfg *config.Config, jwtManager *jwt.Manager) *Serv
 		Recommendation: NewRecommendationService(repos.User, repos.Preference, repos.CareerTalk, repos.JobFair),
 		Calendar:       NewCalendarService(repos.Calendar, repos.CareerTalk, repos.JobFair, repos.Preference),
 		Reminder:       NewReminderService(repos.Reminder),
-		Admin:          NewAdminService(repos.Admin),
+		Admin: NewAdminService(repos.CareerTalk, repos.JobFair, repos.User, repos.AuditLog, repos.SyncLog),
 	}
 }
 
@@ -88,5 +88,22 @@ type ReminderService interface {
 
 // AdminService 管理端服务
 type AdminService interface {
-	TriggerSync(ctx context.Context, req *request.SyncTriggerRequest) (interface{}, error)
+	ListCareerTalks(ctx context.Context, q *request.AdminCareerTalkQuery) (list interface{}, total int64, page, pageSize int, err error)
+	CreateCareerTalk(ctx context.Context, operatorID uint64, req *request.AdminCareerTalkCreateRequest, ip string) (interface{}, error)
+	UpdateCareerTalk(ctx context.Context, operatorID, id uint64, req *request.AdminCareerTalkUpdateRequest, ip string) (interface{}, error)
+	DeleteCareerTalk(ctx context.Context, operatorID, id uint64, ip string) error
+	BatchCareerTalkStatus(ctx context.Context, operatorID uint64, req *request.BatchPublishStatusRequest, ip string) error
+	ListJobFairs(ctx context.Context, q *request.AdminJobFairQuery) (list interface{}, total int64, page, pageSize int, err error)
+	CreateJobFair(ctx context.Context, operatorID uint64, req *request.AdminJobFairCreateRequest, ip string) (interface{}, error)
+	UpdateJobFair(ctx context.Context, operatorID, id uint64, req *request.AdminJobFairUpdateRequest, ip string) (interface{}, error)
+	DeleteJobFair(ctx context.Context, operatorID, id uint64, ip string) error
+	BatchJobFairStatus(ctx context.Context, operatorID uint64, req *request.BatchPublishStatusRequest, ip string) error
+	ListUsers(ctx context.Context, q *request.AdminUserQuery) (list interface{}, total int64, page, pageSize int, err error)
+	CreateUser(ctx context.Context, operatorID uint64, req *request.AdminUserCreateRequest, ip string) (interface{}, error)
+	UpdateUserStatus(ctx context.Context, operatorID, id uint64, req *request.AdminUserStatusRequest, ip string) error
+	UpdateUser(ctx context.Context, operatorID, id uint64, req *request.AdminUserUpdateRequest, ip string) (interface{}, error)
+	ResetUserPassword(ctx context.Context, operatorID, id uint64, req *request.AdminResetPasswordRequest, ip string) error
+	TriggerSync(ctx context.Context, operatorID uint64, req *request.SyncTriggerRequest, ip string) (interface{}, error)
+	ListSyncLogs(ctx context.Context, q *request.SyncLogQuery) (list interface{}, total int64, page, pageSize int, err error)
+	ListAuditLogs(ctx context.Context, q *request.AuditLogQuery) (list interface{}, total int64, page, pageSize int, err error)
 }

@@ -102,16 +102,3 @@ func (s *reminderService) ListLogs(_ context.Context, _ uint64, _ *gin.Context) 
 	return list, total, page, pageSize, nil
 }
 
-type adminService struct{}
-
-func NewAdminService(_ repository.AdminRepository) AdminService {
-	return &adminService{}
-}
-
-func (s *adminService) TriggerSync(_ context.Context, _ *request.SyncTriggerRequest) (interface{}, error) {
-	return map[string]interface{}{
-		"taskId":    "sync-task-placeholder",
-		"status":    "pending",
-		"message":   "同步任务已创建，业务逻辑待实现",
-	}, nil
-}

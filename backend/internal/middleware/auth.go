@@ -91,7 +91,7 @@ func RequireAdmin() gin.HandlerFunc {
 		role, _ := c.Get(ContextUserRoleKey)
 		if role != string(modelRoleAdmin) {
 			c.Abort()
-			c.Set("forbidden", true)
+			c.Set("admin_forbidden", true)
 			return
 		}
 		c.Next()

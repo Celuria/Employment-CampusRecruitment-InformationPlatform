@@ -84,3 +84,153 @@ type SyncTriggerRequest struct {
 	SourceType string `json:"sourceType"`
 	Force      bool   `json:"force"`
 }
+
+// AdminCareerTalkQuery 管理端宣讲会查询
+type AdminCareerTalkQuery struct {
+	CareerTalkQuery
+	PublishStatus string `form:"publishStatus"`
+	SourceType    string `form:"sourceType"`
+}
+
+// AdminCareerTalkCreateRequest 创建宣讲会
+type AdminCareerTalkCreateRequest struct {
+	Title           string   `json:"title" binding:"required,max=200"`
+	Company         string   `json:"company" binding:"required,max=128"`
+	IndustryCode    string   `json:"industryCode"`
+	CompanySize     string   `json:"companySize"`
+	StartTime       string   `json:"startTime" binding:"required"`
+	EndTime         string   `json:"endTime"`
+	Location        string   `json:"location" binding:"required,max=256"`
+	Campus          string   `json:"campus"`
+	Format          string   `json:"format" binding:"required,oneof=online offline hybrid"`
+	Positions       []string `json:"positions"`
+	TargetMajors    []string `json:"targetMajors"`
+	RegistrationURL string   `json:"registrationUrl"`
+	SourceURL       string   `json:"sourceUrl"`
+	LogoURL         string   `json:"logoUrl"`
+	Description     string   `json:"description"`
+	PublishStatus   string   `json:"publishStatus"`
+}
+
+// AdminCareerTalkUpdateRequest 更新宣讲会
+type AdminCareerTalkUpdateRequest struct {
+	Title           *string  `json:"title"`
+	Company         *string  `json:"company"`
+	IndustryCode    *string  `json:"industryCode"`
+	CompanySize     *string  `json:"companySize"`
+	StartTime       *string  `json:"startTime"`
+	EndTime         *string  `json:"endTime"`
+	Location        *string  `json:"location"`
+	Campus          *string  `json:"campus"`
+	Format          *string  `json:"format"`
+	Positions       []string `json:"positions"`
+	TargetMajors    []string `json:"targetMajors"`
+	RegistrationURL *string  `json:"registrationUrl"`
+	SourceURL       *string  `json:"sourceUrl"`
+	LogoURL         *string  `json:"logoUrl"`
+	Description     *string  `json:"description"`
+	PublishStatus   *string  `json:"publishStatus"`
+}
+
+// AdminJobFairQuery 管理端双选会查询
+type AdminJobFairQuery struct {
+	JobFairQuery
+	PublishStatus string `form:"publishStatus"`
+	SourceType    string `form:"sourceType"`
+}
+
+// AdminJobFairCreateRequest 创建双选会
+type AdminJobFairCreateRequest struct {
+	Title          string   `json:"title" binding:"required,max=200"`
+	StartDate      string   `json:"startDate" binding:"required"`
+	EndDate        string   `json:"endDate"`
+	StartTime      string   `json:"startTime"`
+	Location       string   `json:"location" binding:"required,max=256"`
+	Campus         string   `json:"campus"`
+	CompanyCount   *int     `json:"companyCount"`
+	TargetAudience string   `json:"targetAudience"`
+	TargetMajors   []string `json:"targetMajors"`
+	Deadline       string   `json:"deadline"`
+	DetailURL      string   `json:"detailUrl"`
+	SourceURL      string   `json:"sourceUrl"`
+	Description    string   `json:"description"`
+	PublishStatus  string   `json:"publishStatus"`
+}
+
+// AdminJobFairUpdateRequest 更新双选会
+type AdminJobFairUpdateRequest struct {
+	Title          *string  `json:"title"`
+	StartDate      *string  `json:"startDate"`
+	EndDate        *string  `json:"endDate"`
+	StartTime      *string  `json:"startTime"`
+	Location       *string  `json:"location"`
+	Campus         *string  `json:"campus"`
+	CompanyCount   *int     `json:"companyCount"`
+	TargetAudience *string  `json:"targetAudience"`
+	TargetMajors   []string `json:"targetMajors"`
+	Deadline       *string  `json:"deadline"`
+	DetailURL      *string  `json:"detailUrl"`
+	SourceURL      *string  `json:"sourceUrl"`
+	Description    *string  `json:"description"`
+	PublishStatus  *string  `json:"publishStatus"`
+}
+
+// BatchPublishStatusRequest 批量更新发布状态
+type BatchPublishStatusRequest struct {
+	IDs           []uint64 `json:"ids" binding:"required,min=1"`
+	PublishStatus string   `json:"publishStatus" binding:"required,oneof=draft published archived"`
+}
+
+// AdminUserQuery 用户列表查询
+type AdminUserQuery struct {
+	Keyword  string `form:"keyword"`
+	Role     string `form:"role"`
+	Status   string `form:"status"`
+	Page     int    `form:"page"`
+	PageSize int    `form:"pageSize"`
+}
+
+// AdminUserCreateRequest 创建用户
+type AdminUserCreateRequest struct {
+	Username string `json:"username" binding:"required,min=4,max=32"`
+	Password string `json:"password" binding:"required,min=8"`
+	Name     string `json:"name" binding:"required,max=64"`
+	Email    string `json:"email" binding:"required,email"`
+	Role     string `json:"role" binding:"required,oneof=student admin"`
+}
+
+// AdminUserStatusRequest 更新用户状态
+type AdminUserStatusRequest struct {
+	Status string `json:"status" binding:"required,oneof=active locked disabled"`
+}
+
+// AdminUserUpdateRequest 更新用户资料与角色
+type AdminUserUpdateRequest struct {
+	Name    *string `json:"name"`
+	Email   *string `json:"email"`
+	College *string `json:"college"`
+	Major   *string `json:"major"`
+	Role    *string `json:"role"`
+}
+
+// AdminResetPasswordRequest 重置密码
+type AdminResetPasswordRequest struct {
+	NewPassword string `json:"newPassword" binding:"required,min=8"`
+}
+
+// AuditLogQuery 审计日志查询
+type AuditLogQuery struct {
+	OperatorID   uint64 `form:"operatorId"`
+	Action       string `form:"action"`
+	ResourceType string `form:"resourceType"`
+	StartDate    string `form:"startDate"`
+	EndDate      string `form:"endDate"`
+	Page         int    `form:"page"`
+	PageSize     int    `form:"pageSize"`
+}
+
+// SyncLogQuery 同步记录查询
+type SyncLogQuery struct {
+	Page     int `form:"page"`
+	PageSize int `form:"pageSize"`
+}

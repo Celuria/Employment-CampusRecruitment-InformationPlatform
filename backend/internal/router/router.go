@@ -76,17 +76,25 @@ func registerStudentRoutes(auth *gin.RouterGroup, h *handler.Handler) {
 
 func registerAdminRoutes(admin *gin.RouterGroup, h *handler.Handler) {
 	admin.POST("/sync", h.Admin.Sync)
+	admin.GET("/sync/logs", h.Admin.ListSyncLogs)
 
-	admin.GET("/career-talks", h.Admin.Placeholder)
-	admin.POST("/career-talks", h.Admin.Placeholder)
-	admin.PUT("/career-talks/:id", h.Admin.Placeholder)
-	admin.DELETE("/career-talks/:id", h.Admin.Placeholder)
+	admin.GET("/career-talks", h.Admin.ListCareerTalks)
+	admin.POST("/career-talks", h.Admin.CreateCareerTalk)
+	admin.PUT("/career-talks/:id", h.Admin.UpdateCareerTalk)
+	admin.DELETE("/career-talks/:id", h.Admin.DeleteCareerTalk)
+	admin.PATCH("/career-talks/batch-status", h.Admin.BatchCareerTalkStatus)
 
-	admin.GET("/job-fairs", h.Admin.Placeholder)
-	admin.POST("/job-fairs", h.Admin.Placeholder)
-	admin.PUT("/job-fairs/:id", h.Admin.Placeholder)
-	admin.DELETE("/job-fairs/:id", h.Admin.Placeholder)
+	admin.GET("/job-fairs", h.Admin.ListJobFairs)
+	admin.POST("/job-fairs", h.Admin.CreateJobFair)
+	admin.PUT("/job-fairs/:id", h.Admin.UpdateJobFair)
+	admin.DELETE("/job-fairs/:id", h.Admin.DeleteJobFair)
+	admin.PATCH("/job-fairs/batch-status", h.Admin.BatchJobFairStatus)
 
-	admin.GET("/users", h.Admin.Placeholder)
-	admin.GET("/audit-logs", h.Admin.Placeholder)
+	admin.GET("/users", h.Admin.ListUsers)
+	admin.POST("/users", h.Admin.CreateUser)
+	admin.PATCH("/users/:id", h.Admin.UpdateUser)
+	admin.PATCH("/users/:id/status", h.Admin.UpdateUserStatus)
+	admin.POST("/users/:id/reset-password", h.Admin.ResetUserPassword)
+
+	admin.GET("/audit-logs", h.Admin.ListAuditLogs)
 }

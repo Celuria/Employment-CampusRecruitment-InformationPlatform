@@ -36,8 +36,8 @@ func AuthErrorHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 		if c.IsAborted() && c.Writer.Status() == 200 {
-			if _, ok := c.Get("forbidden"); ok {
-				response.Fail(c, 403, apperrors.ErrForbidden.Code, apperrors.ErrForbidden.Message)
+			if _, ok := c.Get("admin_forbidden"); ok {
+				response.Fail(c, 403, apperrors.ErrAdminRequired.Code, apperrors.ErrAdminRequired.Message)
 				return
 			}
 			if _, ok := c.Get("auth_error"); ok {

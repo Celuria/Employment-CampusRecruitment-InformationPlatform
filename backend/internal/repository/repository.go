@@ -18,7 +18,8 @@ type Repositories struct {
 	Recommendation RecommendationRepository
 	Calendar       CalendarRepository
 	Reminder       ReminderRepository
-	Admin          AdminRepository
+	AuditLog       AuditLogRepository
+	SyncLog        SyncLogRepository
 }
 
 func NewRepositories(db *gorm.DB) *Repositories {
@@ -30,7 +31,8 @@ func NewRepositories(db *gorm.DB) *Repositories {
 		Recommendation: NewRecommendationRepository(db),
 		Calendar:       NewCalendarRepository(db),
 		Reminder:       NewReminderRepository(db),
-		Admin:          NewAdminRepository(db),
+		AuditLog:       NewAuditLogRepository(db),
+		SyncLog:        NewSyncLogRepository(db),
 	}
 }
 
@@ -45,6 +47,7 @@ type UserRepository interface {
 	Update(ctx context.Context, user *model.User) error
 	IncrementLoginAttempts(ctx context.Context, id uint64, maxAttempts, lockMinutes int) error
 	ResetLoginAttempts(ctx context.Context, id uint64) error
+	ListAdmin(ctx context.Context, q *request.AdminUserQuery, page, pageSize int) ([]model.User, int64, error)
 }
 
 type userRepository struct{ db *gorm.DB }
@@ -116,6 +119,28 @@ func (r *userRepository) ResetLoginAttempts(ctx context.Context, id uint64) erro
 	}).Error
 }
 
+func (r *userRepository) ListAdmin(ctx context.Context, q *request.AdminUserQuery, page, pageSize int) ([]model.User, int64, error) {
+	var list []model.User
+	var total int64
+	query := r.db.WithContext(ctx).Model(&model.User{})
+	if q.Keyword != "" {
+		like := "%" + q.Keyword + "%"
+		query = query.Where("username LIKE ? OR name LIKE ? OR email LIKE ?", like, like, like)
+	}
+	if q.Role != "" {
+		query = query.Where("role = ?", q.Role)
+	}
+	if q.Status != "" {
+		query = query.Where("status = ?", q.Status)
+	}
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * pageSize
+	err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&list).Error
+	return list, total, err
+}
+
 // PreferenceRepository 偏好数据访问
 type PreferenceRepository interface {
 	FindByUserID(ctx context.Context, userID uint64) (*model.UserPreference, error)
@@ -163,6 +188,13 @@ type CareerTalkRepository interface {
 	FindPublishedByID(ctx context.Context, id uint64) (*model.CareerTalk, error)
 	ListUpcomingWithin24h(ctx context.Context, limit int) ([]model.CareerTalk, error)
 	ListHotCompanies(ctx context.Context, limit int) ([]HotCompany, error)
+	ListAdmin(ctx context.Context, q *request.AdminCareerTalkQuery, page, pageSize int) ([]model.CareerTalk, int64, error)
+	FindByID(ctx context.Context, id uint64) (*model.CareerTalk, error)
+	Create(ctx context.Context, talk *model.CareerTalk) error
+	Update(ctx context.Context, talk *model.CareerTalk) error
+	SoftDelete(ctx context.Context, id uint64, updatedBy uint64) error
+	BatchUpdateStatus(ctx context.Context, ids []uint64, status model.PublishStatus, updatedBy uint64) error
+	RefreshSyncedAt(ctx context.Context, sourceType string) (int64, error)
 }
 
 type careerTalkRepository struct{ db *gorm.DB }
@@ -278,10 +310,84 @@ func (r *careerTalkRepository) FindPublishedByID(ctx context.Context, id uint64)
 	return &talk, err
 }
 
+func (r *careerTalkRepository) ListAdmin(ctx context.Context, q *request.AdminCareerTalkQuery, page, pageSize int) ([]model.CareerTalk, int64, error) {
+	var list []model.CareerTalk
+	var total int64
+	query := r.db.WithContext(ctx).Model(&model.CareerTalk{})
+	query = applyCareerTalkFilters(query, &q.CareerTalkQuery)
+	if q.PublishStatus != "" {
+		query = query.Where("publish_status = ?", q.PublishStatus)
+	}
+	if q.SourceType != "" {
+		query = query.Where("source_type = ?", q.SourceType)
+	}
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * pageSize
+	err := query.Order("start_time DESC").Offset(offset).Limit(pageSize).Find(&list).Error
+	return list, total, err
+}
+
+func (r *careerTalkRepository) FindByID(ctx context.Context, id uint64) (*model.CareerTalk, error) {
+	var talk model.CareerTalk
+	err := r.db.WithContext(ctx).First(&talk, id).Error
+	return &talk, err
+}
+
+func (r *careerTalkRepository) Create(ctx context.Context, talk *model.CareerTalk) error {
+	return r.db.WithContext(ctx).Create(talk).Error
+}
+
+func (r *careerTalkRepository) Update(ctx context.Context, talk *model.CareerTalk) error {
+	return r.db.WithContext(ctx).Save(talk).Error
+}
+
+func (r *careerTalkRepository) SoftDelete(ctx context.Context, id uint64, updatedBy uint64) error {
+	result := r.db.WithContext(ctx).Model(&model.CareerTalk{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"publish_status": model.PublishArchived,
+		"updated_by":     updatedBy,
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+func (r *careerTalkRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.PublishStatus, updatedBy uint64) error {
+	return r.db.WithContext(ctx).Model(&model.CareerTalk{}).
+		Where("id IN ?", ids).
+		Updates(map[string]interface{}{
+			"publish_status": status,
+			"updated_by":     updatedBy,
+		}).Error
+}
+
+func (r *careerTalkRepository) RefreshSyncedAt(ctx context.Context, sourceType string) (int64, error) {
+	if sourceType == "job_fair" {
+		return 0, nil
+	}
+	now := time.Now()
+	result := r.db.WithContext(ctx).Model(&model.CareerTalk{}).
+		Where("source_type = ? AND source_url <> ''", "sync").
+		Update("synced_at", now)
+	return result.RowsAffected, result.Error
+}
+
 // JobFairRepository 双选会数据访问
 type JobFairRepository interface {
 	ListPublished(ctx context.Context, q *request.JobFairQuery, page, pageSize int) ([]model.JobFair, int64, error)
 	FindPublishedByID(ctx context.Context, id uint64) (*model.JobFair, error)
+	ListAdmin(ctx context.Context, q *request.AdminJobFairQuery, page, pageSize int) ([]model.JobFair, int64, error)
+	FindByID(ctx context.Context, id uint64) (*model.JobFair, error)
+	Create(ctx context.Context, fair *model.JobFair) error
+	Update(ctx context.Context, fair *model.JobFair) error
+	SoftDelete(ctx context.Context, id uint64, updatedBy uint64) error
+	BatchUpdateStatus(ctx context.Context, ids []uint64, status model.PublishStatus, updatedBy uint64) error
+	RefreshSyncedAt(ctx context.Context, sourceType string) (int64, error)
 }
 
 type jobFairRepository struct{ db *gorm.DB }
@@ -335,6 +441,76 @@ func (r *jobFairRepository) FindPublishedByID(ctx context.Context, id uint64) (*
 	var fair model.JobFair
 	err := r.db.WithContext(ctx).Where("id = ? AND publish_status = ?", id, model.PublishPublished).First(&fair).Error
 	return &fair, err
+}
+
+func (r *jobFairRepository) ListAdmin(ctx context.Context, q *request.AdminJobFairQuery, page, pageSize int) ([]model.JobFair, int64, error) {
+	var list []model.JobFair
+	var total int64
+	query := r.db.WithContext(ctx).Model(&model.JobFair{})
+	query = applyJobFairFilters(query, &q.JobFairQuery)
+	if q.PublishStatus != "" {
+		query = query.Where("publish_status = ?", q.PublishStatus)
+	}
+	if q.SourceType != "" {
+		query = query.Where("source_type = ?", q.SourceType)
+	}
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * pageSize
+	err := query.Order("start_date DESC").Offset(offset).Limit(pageSize).Find(&list).Error
+	return list, total, err
+}
+
+func (r *jobFairRepository) FindByID(ctx context.Context, id uint64) (*model.JobFair, error) {
+	var fair model.JobFair
+	err := r.db.WithContext(ctx).First(&fair, id).Error
+	return &fair, err
+}
+
+func (r *jobFairRepository) Create(ctx context.Context, fair *model.JobFair) error {
+	return r.db.WithContext(ctx).Create(fair).Error
+}
+
+func (r *jobFairRepository) Update(ctx context.Context, fair *model.JobFair) error {
+	return r.db.WithContext(ctx).Save(fair).Error
+}
+
+func (r *jobFairRepository) SoftDelete(ctx context.Context, id uint64, updatedBy uint64) error {
+	result := r.db.WithContext(ctx).Model(&model.JobFair{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"publish_status": model.PublishArchived,
+		"updated_by":     updatedBy,
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+func (r *jobFairRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.PublishStatus, updatedBy uint64) error {
+	return r.db.WithContext(ctx).Model(&model.JobFair{}).
+		Where("id IN ?", ids).
+		Updates(map[string]interface{}{
+			"publish_status": status,
+			"updated_by":     updatedBy,
+		}).Error
+}
+
+func (r *jobFairRepository) RefreshSyncedAt(ctx context.Context, sourceType string) (int64, error) {
+	now := time.Now()
+	if sourceType == "career_talk" {
+		return 0, nil
+	}
+	query := r.db.WithContext(ctx).Model(&model.JobFair{}).
+		Where("source_type = ? AND source_url <> ''", "sync")
+	if sourceType == "job_fair" || sourceType == "" || sourceType == "all" {
+		result := query.Update("synced_at", now)
+		return result.RowsAffected, result.Error
+	}
+	return 0, nil
 }
 
 // CalendarRepository 日历数据访问
@@ -414,11 +590,81 @@ func (r *calendarRepository) Delete(ctx context.Context, userID, id uint64) erro
 	return nil
 }
 
+// AuditLogRepository 审计日志
+type AuditLogRepository interface {
+	Create(ctx context.Context, log *model.AuditLog) error
+	List(ctx context.Context, q *request.AuditLogQuery, page, pageSize int) ([]model.AuditLog, int64, error)
+}
+
+type auditLogRepository struct{ db *gorm.DB }
+
+func NewAuditLogRepository(db *gorm.DB) AuditLogRepository { return &auditLogRepository{db: db} }
+
+func (r *auditLogRepository) Create(ctx context.Context, log *model.AuditLog) error {
+	return r.db.WithContext(ctx).Create(log).Error
+}
+
+func (r *auditLogRepository) List(ctx context.Context, q *request.AuditLogQuery, page, pageSize int) ([]model.AuditLog, int64, error) {
+	var list []model.AuditLog
+	var total int64
+	query := r.db.WithContext(ctx).Model(&model.AuditLog{})
+	if q.OperatorID > 0 {
+		query = query.Where("operator_id = ?", q.OperatorID)
+	}
+	if q.Action != "" {
+		query = query.Where("action = ?", q.Action)
+	}
+	if q.ResourceType != "" {
+		query = query.Where("resource_type = ?", q.ResourceType)
+	}
+	if q.StartDate != "" {
+		query = query.Where("created_at >= ?", q.StartDate)
+	}
+	if q.EndDate != "" {
+		query = query.Where("created_at < ?", q.EndDate+" 23:59:59")
+	}
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * pageSize
+	err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&list).Error
+	return list, total, err
+}
+
+// SyncLogRepository 同步记录
+type SyncLogRepository interface {
+	Create(ctx context.Context, log *model.SyncLog) error
+	Update(ctx context.Context, log *model.SyncLog) error
+	List(ctx context.Context, page, pageSize int) ([]model.SyncLog, int64, error)
+}
+
+type syncLogRepository struct{ db *gorm.DB }
+
+func NewSyncLogRepository(db *gorm.DB) SyncLogRepository { return &syncLogRepository{db: db} }
+
+func (r *syncLogRepository) Create(ctx context.Context, log *model.SyncLog) error {
+	return r.db.WithContext(ctx).Create(log).Error
+}
+
+func (r *syncLogRepository) Update(ctx context.Context, log *model.SyncLog) error {
+	return r.db.WithContext(ctx).Save(log).Error
+}
+
+func (r *syncLogRepository) List(ctx context.Context, page, pageSize int) ([]model.SyncLog, int64, error) {
+	var list []model.SyncLog
+	var total int64
+	query := r.db.WithContext(ctx).Model(&model.SyncLog{})
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * pageSize
+	err := query.Order("started_at DESC").Offset(offset).Limit(pageSize).Find(&list).Error
+	return list, total, err
+}
+
 // 以下 Repository 为占位，待业务迭代实现
 type RecommendationRepository interface{}
 type ReminderRepository interface{}
-type AdminRepository interface{}
 
 func NewRecommendationRepository(_ *gorm.DB) RecommendationRepository { return struct{}{} }
 func NewReminderRepository(_ *gorm.DB) ReminderRepository           { return struct{}{} }
-func NewAdminRepository(_ *gorm.DB) AdminRepository                 { return struct{}{} }

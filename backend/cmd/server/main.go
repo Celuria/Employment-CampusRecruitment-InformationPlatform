@@ -58,5 +58,7 @@ func autoMigrate(db interface{ AutoMigrate(...interface{}) error }) error {
 		&model.JobFair{},
 		&model.CalendarEvent{},
 		&model.ReminderLog{},
+		&model.AuditLog{},
+		&model.SyncLog{},
 	)
 }

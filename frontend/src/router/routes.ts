@@ -5,7 +5,8 @@ declare module 'vue-router' {
     title?: string
     requiresAuth?: boolean
     guestOnly?: boolean
-    layout?: 'default' | 'auth' | 'blank'
+    requiresAdmin?: boolean
+    layout?: 'default' | 'auth' | 'admin' | 'blank'
   }
 }
 
@@ -75,6 +76,44 @@ export const routes: RouteRecordRaw[] = [
         name: 'ProfileReminders',
         component: () => import('@/views/profile/RemindersView.vue'),
         meta: { title: '提醒记录' },
+      },
+    ],
+  },
+  {
+    path: '/admin',
+    component: () => import('@/views/admin/AdminView.vue'),
+    meta: { title: '管理后台', requiresAuth: true, requiresAdmin: true, layout: 'admin' },
+    redirect: '/admin/career-talks',
+    children: [
+      {
+        path: 'career-talks',
+        name: 'AdminCareerTalks',
+        component: () => import('@/views/admin/AdminCareerTalkListView.vue'),
+        meta: { title: '宣讲会管理' },
+      },
+      {
+        path: 'job-fairs',
+        name: 'AdminJobFairs',
+        component: () => import('@/views/admin/AdminJobFairListView.vue'),
+        meta: { title: '双选会管理' },
+      },
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('@/views/admin/AdminUserListView.vue'),
+        meta: { title: '用户管理' },
+      },
+      {
+        path: 'sync',
+        name: 'AdminSync',
+        component: () => import('@/views/admin/AdminSyncView.vue'),
+        meta: { title: '信息同步' },
+      },
+      {
+        path: 'audit-logs',
+        name: 'AdminAuditLogs',
+        component: () => import('@/views/admin/AdminAuditLogView.vue'),
+        meta: { title: '审计日志' },
       },
     ],
   },

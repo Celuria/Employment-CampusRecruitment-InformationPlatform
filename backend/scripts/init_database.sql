@@ -204,11 +204,61 @@ CREATE TABLE IF NOT EXISTS `reminder_logs` (
   CONSTRAINT `fk_reminder_logs_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='邮件提醒记录表';
 
+-- -----------------------------------------------------------------------------
+-- 10. 审计日志表 audit_logs
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `audit_logs` (
+  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+  `operator_id`   BIGINT UNSIGNED NOT NULL COMMENT '操作人ID',
+  `action`        VARCHAR(16)     NOT NULL COMMENT '动作: CREATE/UPDATE/DELETE/SYNC',
+  `resource_type` VARCHAR(32)     NOT NULL COMMENT '资源类型',
+  `resource_id`   BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '资源ID',
+  `detail`        TEXT            DEFAULT NULL COMMENT '操作详情JSON',
+  `ip`            VARCHAR(64)     DEFAULT NULL COMMENT '操作IP',
+  `created_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_audit_operator` (`operator_id`),
+  KEY `idx_audit_action` (`action`),
+  KEY `idx_audit_resource` (`resource_type`),
+  KEY `idx_audit_created` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理端审计日志';
+
+-- -----------------------------------------------------------------------------
+-- 11. 同步记录表 sync_logs
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `sync_logs` (
+  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '记录ID',
+  `task_id`       VARCHAR(64)     NOT NULL COMMENT '任务ID',
+  `source_type`   VARCHAR(32)     NOT NULL COMMENT '同步类型',
+  `status`        VARCHAR(16)     NOT NULL COMMENT '状态: pending/running/success/failed',
+  `added_count`   INT             NOT NULL DEFAULT 0 COMMENT '新增条数',
+  `updated_count` INT             NOT NULL DEFAULT 0 COMMENT '更新条数',
+  `failed_count`  INT             NOT NULL DEFAULT 0 COMMENT '失败条数',
+  `started_at`    DATETIME        NOT NULL COMMENT '开始时间',
+  `finished_at`   DATETIME        DEFAULT NULL COMMENT '结束时间',
+  `operator_id`   BIGINT UNSIGNED NOT NULL COMMENT '操作人ID',
+  `error_message` VARCHAR(512)    DEFAULT NULL COMMENT '错误信息',
+  `created_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_sync_task` (`task_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='信息同步记录';
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- -----------------------------------------------------------------------------
--- 10. 初始化演示数据（可选）
+-- 12. 初始化演示数据（可选）
 -- -----------------------------------------------------------------------------
+
+-- 初始管理员账号（用户名 admin，密码 Admin@123456）
+INSERT INTO `users` (`username`, `password_hash`, `email`, `name`, `role`, `status`)
+VALUES (
+  'admin',
+  '$2a$10$3HQVFi1u4oXsG4AnK55gqeuSil2IVlGpDbZb/.wlLAk8.MR1yBFou',
+  'admin@employment-center.edu.cn',
+  '系统管理员',
+  'admin',
+  'active'
+) ON DUPLICATE KEY UPDATE `username` = `username`;
 
 -- 示例宣讲会（已发布）
 INSERT INTO `career_talks` (

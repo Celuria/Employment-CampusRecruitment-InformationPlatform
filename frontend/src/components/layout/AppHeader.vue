@@ -50,8 +50,13 @@ async function handleLogout() {
   router.push('/login')
 }
 
+function goAdmin() {
+  router.push('/admin')
+}
+
 function handleUserCommand(command: string) {
   if (command === 'profile') goProfile()
+  if (command === 'admin') goAdmin()
   if (command === 'logout') handleLogout()
 }
 
@@ -137,6 +142,7 @@ function displayName() {
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                <el-dropdown-item v-if="authStore.isAdmin" command="admin">管理后台</el-dropdown-item>
                 <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
