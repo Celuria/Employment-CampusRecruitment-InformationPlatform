@@ -270,36 +270,14 @@ onUnmounted(() => {
                   class="flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-ink-50"
                   @click="goReminders"
                 >
-                  <div
-                    class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                    :class="reminder.status === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'"
-                  >
-                    <svg v-if="reminder.status === 'sent'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <svg v-else-if="reminder.status === 'pending'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </div>
+                  <!-- 新消息蓝点 -->
+                  <div class="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-brand-500" />
                   <div class="min-w-0 flex-1">
                     <p class="text-sm font-medium text-ink-700 truncate">{{ reminder.eventTitle }}</p>
                     <p class="mt-0.5 text-xs text-ink-400">
                       开始时间：{{ eventStartTime(reminder) }}
                     </p>
                   </div>
-                  <span
-                    class="mt-1 shrink-0 text-xs"
-                    :class="{
-                      'text-green-500': reminder.status === 'sent',
-                      'text-yellow-500': reminder.status === 'pending',
-                      'text-red-400': reminder.status === 'failed' || reminder.status === 'cancelled',
-                    }"
-                  >
-                    {{ reminder.status === 'sent' ? '已提醒' : reminder.status === 'pending' ? '待提醒' : reminder.status === 'cancelled' ? '已取消' : '失败' }}
-                  </span>
                 </button>
               </div>
             </div>
