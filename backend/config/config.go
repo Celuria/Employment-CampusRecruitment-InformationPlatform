@@ -15,6 +15,7 @@ type Config struct {
 	Log      LogConfig      `mapstructure:"log"`
 	CORS     CORSConfig     `mapstructure:"cors"`
 	Auth     AuthConfig     `mapstructure:"auth"`
+	Email    EmailConfig    `mapstructure:"email"`
 }
 
 type ServerConfig struct {
@@ -57,6 +58,15 @@ type CORSConfig struct {
 type AuthConfig struct {
 	MaxLoginAttempts int `mapstructure:"max_login_attempts"`
 	LockMinutes      int `mapstructure:"lock_minutes"`
+}
+
+type EmailConfig struct {
+	Enabled  bool   `mapstructure:"enabled"`
+	SMTPHost string `mapstructure:"smtp_host"`
+	SMTPPort int    `mapstructure:"smtp_port"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	FromName string `mapstructure:"from_name"`
 }
 
 // DSN 生成 MySQL 连接字符串

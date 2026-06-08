@@ -8,6 +8,7 @@ import (
 	dtoresp "github.com/employment-center/campus-recruitment/internal/dto/response"
 	"github.com/employment-center/campus-recruitment/internal/model"
 	"github.com/employment-center/campus-recruitment/internal/repository"
+	"github.com/employment-center/campus-recruitment/pkg/email"
 	"github.com/employment-center/campus-recruitment/pkg/jwt"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -28,7 +29,8 @@ type Services struct {
 func NewServices(db *gorm.DB, cfg *config.Config, jwtManager *jwt.Manager) *Services {
 	repos := repository.NewRepositories(db)
 
-	reminderSvc := NewReminderService(repos.Reminder)
+	emailSender := email.NewSender(cfg.Email)
+	reminderSvc := NewReminderService(repos.Reminder, repos.User, emailSender)
 
 	return &Services{
 		Auth:           NewAuthService(repos.User, jwtManager, cfg.Auth),

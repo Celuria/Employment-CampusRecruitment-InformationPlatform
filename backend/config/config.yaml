@@ -42,3 +42,12 @@ cors:
 auth:
   max_login_attempts: 5
   lock_minutes: 15
+
+email:
+  # ====== 以下为【发件】配置，只需一个发件账号即可向任意邮箱发送提醒 ======
+  enabled: true                 # 是否启用邮件提醒
+  smtp_host: smtp.qq.com       # SMTP 服务器地址（QQ: smtp.qq.com | 163: smtp.163.com）
+  smtp_port: 587               # SMTP 端口（587=STARTTLS, 465=SSL）
+  username: 3474124177@qq.com  # 发件邮箱地址（完整地址）
+  password: "msgtefcqzzzbcicf"         # 【授权码】非登录密码！QQ/163邮箱需在设置中生成
+  from_name: 就业中心           # 收件人看到的发件人名称

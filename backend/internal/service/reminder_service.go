@@ -2,21 +2,34 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/employment-center/campus-recruitment/internal/model"
 	"github.com/employment-center/campus-recruitment/internal/repository"
 	"github.com/employment-center/campus-recruitment/pkg/apperrors"
+	"github.com/employment-center/campus-recruitment/pkg/email"
+	"github.com/employment-center/campus-recruitment/pkg/logger"
 	"github.com/employment-center/campus-recruitment/pkg/pagination"
 	"github.com/gin-gonic/gin"
 )
 
 type reminderServiceImpl struct {
-	repo repository.ReminderRepository
+	repo        repository.ReminderRepository
+	userRepo    repository.UserRepository
+	emailSender *email.Sender
 }
 
-func NewReminderService(repo repository.ReminderRepository) ReminderService {
-	return &reminderServiceImpl{repo: repo}
+func NewReminderService(
+	repo repository.ReminderRepository,
+	userRepo repository.UserRepository,
+	emailSender *email.Sender,
+) ReminderService {
+	return &reminderServiceImpl{
+		repo:        repo,
+		userRepo:    userRepo,
+		emailSender: emailSender,
+	}
 }
 
 // ListLogs 查询用户的提醒记录（分页）
@@ -64,7 +77,7 @@ func (s *reminderServiceImpl) GenerateReminders(ctx context.Context, event *mode
 }
 
 // ProcessPending 处理所有到时间的待发送提醒
-// 由定时调度器调用，返回本次处理数量
+// 由定时调度器调用，标记已发送并发邮件通知用户
 func (s *reminderServiceImpl) ProcessPending(ctx context.Context) (int, error) {
 	now := time.Now()
 	list, err := s.repo.FindPendingByScheduledTime(ctx, now, 100)
@@ -73,13 +86,15 @@ func (s *reminderServiceImpl) ProcessPending(ctx context.Context) (int, error) {
 	}
 
 	processed := 0
-	for _, log := range list {
-		if err := s.repo.MarkSent(ctx, log.ID, now); err != nil {
-			// 标记失败，写入原因并继续
-			_ = s.repo.MarkFailed(ctx, log.ID, err.Error())
+	for _, rm := range list {
+		if err := s.repo.MarkSent(ctx, rm.ID, now); err != nil {
+			_ = s.repo.MarkFailed(ctx, rm.ID, err.Error())
 			continue
 		}
 		processed++
+
+		// 发送邮件提醒
+		go s.sendReminderEmail(rm)
 	}
 	return processed, nil
 }
@@ -87,6 +102,56 @@ func (s *reminderServiceImpl) ProcessPending(ctx context.Context) (int, error) {
 // CancelByCalendarEvent 取消指定日历事件的所有待发送提醒
 func (s *reminderServiceImpl) CancelByCalendarEvent(ctx context.Context, calendarEventID uint64) error {
 	return s.repo.DeleteByCalendarEvent(ctx, calendarEventID)
+}
+
+// sendReminderEmail 向用户发送活动提醒邮件
+func (s *reminderServiceImpl) sendReminderEmail(rm model.ReminderLog) {
+	sugar := logger.Log.Sugar()
+
+	if s.emailSender == nil || !s.emailSender.Enabled() {
+		sugar.Warnf("reminder email: skipped (email disabled), event=%s user=%d", rm.EventTitle, rm.UserID)
+		return
+	}
+
+	user, err := s.userRepo.FindByID(context.Background(), rm.UserID)
+	if err != nil {
+		sugar.Errorf("reminder email: find user %d failed: %v", rm.UserID, err)
+		return
+	}
+	if user.Email == "" {
+		sugar.Warnf("reminder email: user %d has no email, skipped", rm.UserID)
+		return
+	}
+
+	eventLabel := "宣讲会"
+	if rm.EventType == model.EventTypeJobFair {
+		eventLabel = "双选会"
+	}
+
+	subject := fmt.Sprintf("【活动提醒】%s - %s", rm.EventTitle, eventLabel)
+	body := fmt.Sprintf(`您好 %s，
+
+您关注的%s「%s」即将开始。
+
+活动时间：%s
+活动地点：%s
+
+请留意活动时间，提前做好准备。
+
+此邮件由系统自动发送，请勿回复。
+`,
+		user.Name,
+		eventLabel,
+		rm.EventTitle,
+		rm.ScheduledTime.Format("2006-01-02 15:04"),
+		"-",
+	)
+
+	if err := s.emailSender.Send([]string{user.Email}, subject, body); err != nil {
+		sugar.Errorf("reminder email: send to %s failed: %v", user.Email, err)
+	} else {
+		sugar.Infof("reminder email: sent to %s, event=%s", user.Email, rm.EventTitle)
+	}
 }
 
 // calculateScheduledTime 根据 remindBefore 值计算提醒目标时间
