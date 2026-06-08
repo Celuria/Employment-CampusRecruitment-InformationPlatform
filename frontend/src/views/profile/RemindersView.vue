@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { getReminderLogsApi } from '@/api'
 import AppPagination from '@/components/common/AppPagination.vue'
 import type { ReminderLog } from '@/types'
@@ -11,6 +11,9 @@ const pageSize = 10
 const loading = ref(false)
 
 const totalPages = ref(1)
+
+// 客户端过滤：未到时间的 pending 不展示在提醒记录页
+const visibleList = computed(() => list.value.filter((item) => item.status !== 'pending'))
 
 async function fetchData() {
   loading.value = true
@@ -74,7 +77,7 @@ onMounted(fetchData)
     </div>
 
     <template v-else>
-      <div v-if="list.length === 0" class="flex flex-col items-center py-16 text-ink-400">
+      <div v-if="visibleList.length === 0" class="flex flex-col items-center py-16 text-ink-400">
         <svg class="mb-4 h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -97,7 +100,7 @@ onMounted(fetchData)
           </thead>
           <tbody class="divide-y divide-ink-100">
             <tr
-              v-for="item in list"
+              v-for="item in visibleList"
               :key="item.id"
               class="transition-colors hover:bg-ink-50"
             >
