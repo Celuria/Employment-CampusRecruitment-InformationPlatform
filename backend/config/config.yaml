@@ -11,7 +11,7 @@ database:
   charset: utf8mb4
   max_idle_conns: 10
   max_open_conns: 100
-  auto_migrate: true  # 已用 scripts/init_database.sql 建表时请保持 false
+  auto_migrate: true  # 首次使用 scripts/init_database.sql 建表时请保持 false
 
 jwt:
   secret: change-me-in-production
