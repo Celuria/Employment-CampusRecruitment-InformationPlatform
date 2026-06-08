@@ -662,9 +662,79 @@ func (r *syncLogRepository) List(ctx context.Context, page, pageSize int) ([]mod
 	return list, total, err
 }
 
-// 以下 Repository 为占位，待业务迭代实现
+// RecommendationRepository 推荐数据访问（占位）
 type RecommendationRepository interface{}
-type ReminderRepository interface{}
-
 func NewRecommendationRepository(_ *gorm.DB) RecommendationRepository { return struct{}{} }
-func NewReminderRepository(_ *gorm.DB) ReminderRepository           { return struct{}{} }
+
+// ReminderRepository 提醒记录数据访问
+type ReminderRepository interface {
+	Create(ctx context.Context, log *model.ReminderLog) error
+	BatchCreate(ctx context.Context, logs []model.ReminderLog) error
+	ListByUser(ctx context.Context, userID uint64, page, pageSize int) ([]model.ReminderLog, int64, error)
+	FindPendingByScheduledTime(ctx context.Context, before time.Time, limit int) ([]model.ReminderLog, error)
+	MarkSent(ctx context.Context, id uint64, sentTime time.Time) error
+	MarkFailed(ctx context.Context, id uint64, reason string) error
+	DeleteByCalendarEvent(ctx context.Context, calendarEventID uint64) error
+}
+
+type reminderRepository struct{ db *gorm.DB }
+
+func NewReminderRepository(db *gorm.DB) ReminderRepository { return &reminderRepository{db: db} }
+
+func (r *reminderRepository) Create(ctx context.Context, log *model.ReminderLog) error {
+	return r.db.WithContext(ctx).Create(log).Error
+}
+
+func (r *reminderRepository) BatchCreate(ctx context.Context, logs []model.ReminderLog) error {
+	if len(logs) == 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Create(&logs).Error
+}
+
+func (r *reminderRepository) ListByUser(ctx context.Context, userID uint64, page, pageSize int) ([]model.ReminderLog, int64, error) {
+	var list []model.ReminderLog
+	var total int64
+	query := r.db.WithContext(ctx).Model(&model.ReminderLog{}).Where("user_id = ?", userID)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * pageSize
+	err := query.Order("scheduled_time DESC").Offset(offset).Limit(pageSize).Find(&list).Error
+	return list, total, err
+}
+
+func (r *reminderRepository) FindPendingByScheduledTime(ctx context.Context, before time.Time, limit int) ([]model.ReminderLog, error) {
+	var list []model.ReminderLog
+	err := r.db.WithContext(ctx).
+		Where("status = ? AND scheduled_time <= ?", model.ReminderPending, before).
+		Order("scheduled_time ASC").
+		Limit(limit).
+		Find(&list).Error
+	return list, err
+}
+
+func (r *reminderRepository) MarkSent(ctx context.Context, id uint64, sentTime time.Time) error {
+	return r.db.WithContext(ctx).Model(&model.ReminderLog{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"status":    model.ReminderSent,
+			"sent_time": sentTime,
+		}).Error
+}
+
+func (r *reminderRepository) MarkFailed(ctx context.Context, id uint64, reason string) error {
+	return r.db.WithContext(ctx).Model(&model.ReminderLog{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"status":      model.ReminderFailed,
+			"fail_reason": reason,
+			"retry_count": gorm.Expr("retry_count + 1"),
+		}).Error
+}
+
+func (r *reminderRepository) DeleteByCalendarEvent(ctx context.Context, calendarEventID uint64) error {
+	return r.db.WithContext(ctx).
+		Where("calendar_event_id = ? AND status = ?", calendarEventID, model.ReminderPending).
+		Delete(&model.ReminderLog{}).Error
+}

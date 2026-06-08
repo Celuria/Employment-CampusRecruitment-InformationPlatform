@@ -8,15 +8,8 @@ import (
 	"github.com/employment-center/campus-recruitment/internal/repository"
 	"github.com/employment-center/campus-recruitment/pkg/apperrors"
 	"github.com/employment-center/campus-recruitment/pkg/pagination"
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
-
-type stubListService struct{}
-
-func (stubListService) emptyPage() (interface{}, int64, int, int) {
-	return []interface{}{}, 0, 1, pagination.DefaultPageSize
-}
 
 type careerTalkService struct{ repo repository.CareerTalkRepository }
 
@@ -89,16 +82,5 @@ func (s *jobFairService) GetByID(ctx context.Context, id, _ uint64) (interface{}
 		return nil, apperrors.ErrInternalServer
 	}
 	return fair, nil
-}
-
-type reminderService struct{}
-
-func NewReminderService(_ repository.ReminderRepository) ReminderService {
-	return &reminderService{}
-}
-
-func (s *reminderService) ListLogs(_ context.Context, _ uint64, _ *gin.Context) (interface{}, int64, int, int, error) {
-	list, total, page, pageSize := stubListService{}.emptyPage()
-	return list, total, page, pageSize, nil
 }
 

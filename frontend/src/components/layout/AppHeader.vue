@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores'
@@ -127,10 +127,29 @@ function goReminders() {
   router.push('/profile/reminders')
 }
 
-// 自动获取一次
+// 登录后自动拉取；每 30 秒轮询，确保调度器处理后的提醒能及时出现红点
+let pollTimer: ReturnType<typeof setInterval> | null = null
+
 watch(() => authStore.isLoggedIn, (val) => {
-  if (val) fetchReminders()
+  if (val) {
+    fetchReminders()
+    if (!pollTimer) {
+      pollTimer = setInterval(fetchReminders, 30_000)
+    }
+  } else {
+    if (pollTimer) {
+      clearInterval(pollTimer)
+      pollTimer = null
+    }
+  }
 }, { immediate: true })
+
+onUnmounted(() => {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+})
 </script>
 
 <template>
@@ -243,8 +262,11 @@ watch(() => authStore.isLoggedIn, (val) => {
                     class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
                     :class="reminder.status === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'"
                   >
-                    <svg v-if="reminder.status === 'success'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg v-if="reminder.status === 'sent'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <svg v-else-if="reminder.status === 'pending'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -258,9 +280,13 @@ watch(() => authStore.isLoggedIn, (val) => {
                   </div>
                   <span
                     class="mt-1 shrink-0 text-xs"
-                    :class="reminder.status === 'success' ? 'text-green-500' : 'text-red-400'"
+                    :class="{
+                      'text-green-500': reminder.status === 'sent',
+                      'text-yellow-500': reminder.status === 'pending',
+                      'text-red-400': reminder.status === 'failed' || reminder.status === 'cancelled',
+                    }"
                   >
-                    {{ reminder.status === 'success' ? '已提醒' : '失败' }}
+                    {{ reminder.status === 'sent' ? '已提醒' : reminder.status === 'pending' ? '待提醒' : reminder.status === 'cancelled' ? '已取消' : '失败' }}
                   </span>
                 </button>
               </div>

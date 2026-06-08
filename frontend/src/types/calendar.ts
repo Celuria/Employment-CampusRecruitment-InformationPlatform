@@ -67,9 +67,14 @@ export interface RecommendationResult {
 
 export interface ReminderLog {
   id: number
+  calendarEventId?: number
   eventTitle: string
+  eventType?: string
+  remindBefore?: string
   scheduledTime: string
   sentTime?: string
-  status: 'success' | 'failed'
+  status: 'pending' | 'sent' | 'failed' | 'cancelled'
   retryCount?: number
+  failReason?: string
+  createdAt?: string
 }

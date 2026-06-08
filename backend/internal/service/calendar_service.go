@@ -19,6 +19,7 @@ type calendarService struct {
 	careerTalk   repository.CareerTalkRepository
 	jobFair      repository.JobFairRepository
 	preference   repository.PreferenceRepository
+	reminderSvc  ReminderService
 }
 
 func NewCalendarService(
@@ -26,12 +27,14 @@ func NewCalendarService(
 	careerTalk repository.CareerTalkRepository,
 	jobFair repository.JobFairRepository,
 	preference repository.PreferenceRepository,
+	reminderSvc ReminderService,
 ) CalendarService {
 	return &calendarService{
-		repo:       repo,
-		careerTalk: careerTalk,
-		jobFair:    jobFair,
-		preference: preference,
+		repo:        repo,
+		careerTalk:  careerTalk,
+		jobFair:     jobFair,
+		preference:  preference,
+		reminderSvc: reminderSvc,
 	}
 }
 
@@ -70,6 +73,9 @@ func (s *calendarService) Create(ctx context.Context, userID uint64, req *reques
 		return nil, apperrors.ErrInternalServer
 	}
 
+	// 为新创建的事件生成提醒记录
+	_ = s.reminderSvc.GenerateReminders(ctx, event)
+
 	vo := s.toVO(ctx, event)
 	return vo, nil
 }
@@ -97,10 +103,17 @@ func (s *calendarService) Update(ctx context.Context, userID, id uint64, req *re
 
 	event.CustomNote = req.CustomNote
 	event.RemindBefore = remindBefore
+
+	// 提醒设置变更后，重新生成提醒记录
+	_ = s.reminderSvc.GenerateReminders(ctx, event)
+
 	return s.toVO(ctx, event), nil
 }
 
 func (s *calendarService) Delete(ctx context.Context, userID, id uint64) error {
+	// 先取消该事件的所有待发送提醒
+	_ = s.reminderSvc.CancelByCalendarEvent(ctx, id)
+
 	if err := s.repo.Delete(ctx, userID, id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return apperrors.ErrCalendarNotFound

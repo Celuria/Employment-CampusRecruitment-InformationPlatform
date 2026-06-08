@@ -6,6 +6,7 @@ import (
 	"github.com/employment-center/campus-recruitment/config"
 	"github.com/employment-center/campus-recruitment/internal/dto/request"
 	dtoresp "github.com/employment-center/campus-recruitment/internal/dto/response"
+	"github.com/employment-center/campus-recruitment/internal/model"
 	"github.com/employment-center/campus-recruitment/internal/repository"
 	"github.com/employment-center/campus-recruitment/pkg/jwt"
 	"github.com/gin-gonic/gin"
@@ -27,15 +28,17 @@ type Services struct {
 func NewServices(db *gorm.DB, cfg *config.Config, jwtManager *jwt.Manager) *Services {
 	repos := repository.NewRepositories(db)
 
+	reminderSvc := NewReminderService(repos.Reminder)
+
 	return &Services{
 		Auth:           NewAuthService(repos.User, jwtManager, cfg.Auth),
 		User:           NewUserService(repos.User, repos.Preference),
 		CareerTalk:     NewCareerTalkService(repos.CareerTalk),
 		JobFair:        NewJobFairService(repos.JobFair),
 		Recommendation: NewRecommendationService(repos.User, repos.Preference, repos.CareerTalk, repos.JobFair),
-		Calendar:       NewCalendarService(repos.Calendar, repos.CareerTalk, repos.JobFair, repos.Preference),
-		Reminder:       NewReminderService(repos.Reminder),
-		Admin: NewAdminService(repos.CareerTalk, repos.JobFair, repos.User, repos.AuditLog, repos.SyncLog),
+		Calendar:       NewCalendarService(repos.Calendar, repos.CareerTalk, repos.JobFair, repos.Preference, reminderSvc),
+		Reminder:       reminderSvc,
+		Admin:          NewAdminService(repos.CareerTalk, repos.JobFair, repos.User, repos.AuditLog, repos.SyncLog),
 	}
 }
 
@@ -84,6 +87,9 @@ type CalendarService interface {
 // ReminderService 提醒服务
 type ReminderService interface {
 	ListLogs(ctx context.Context, userID uint64, c *gin.Context) (list interface{}, total int64, page, pageSize int, err error)
+	GenerateReminders(ctx context.Context, event *model.CalendarEvent) error
+	ProcessPending(ctx context.Context) (int, error)
+	CancelByCalendarEvent(ctx context.Context, calendarEventID uint64) error
 }
 
 // AdminService 管理端服务

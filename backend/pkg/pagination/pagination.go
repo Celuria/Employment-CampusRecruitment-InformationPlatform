@@ -39,3 +39,34 @@ func (q *Query) Limit() int {
 	_, pageSize := q.Normalize()
 	return pageSize
 }
+
+// ParsePage 从字符串解析页码
+func ParsePage(s string) int {
+	return parseOrDefault(s, DefaultPage)
+}
+
+// ParsePageSize 从字符串解析每页条数
+func ParsePageSize(s string) int {
+	ps := parseOrDefault(s, DefaultPageSize)
+	if ps > MaxPageSize {
+		return MaxPageSize
+	}
+	return ps
+}
+
+func parseOrDefault(s string, defaultVal int) int {
+	if s == "" {
+		return defaultVal
+	}
+	n := 0
+	for _, ch := range s {
+		if ch < '0' || ch > '9' {
+			return defaultVal
+		}
+		n = n*10 + int(ch-'0')
+	}
+	if n <= 0 {
+		return defaultVal
+	}
+	return n
+}

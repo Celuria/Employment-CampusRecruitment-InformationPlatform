@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/employment-center/campus-recruitment/config"
 	"github.com/employment-center/campus-recruitment/internal/handler"
@@ -42,6 +44,9 @@ func main() {
 	services := service.NewServices(db, cfg, jwtManager)
 	h := handler.NewHandler(services)
 
+	// 启动提醒调度器：每分钟检查一次待发送提醒
+	go reminderScheduler(services.Reminder)
+
 	engine := router.Setup(cfg, h, jwtManager)
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
 	logger.Log.Info(fmt.Sprintf("server starting on %s", addr))
@@ -61,4 +66,22 @@ func autoMigrate(db interface{ AutoMigrate(...interface{}) error }) error {
 		&model.AuditLog{},
 		&model.SyncLog{},
 	)
+}
+
+// reminderScheduler 提醒调度器，每分钟检查并处理到时间的待发送提醒
+func reminderScheduler(reminderSvc service.ReminderService) {
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+
+	sugar := logger.Log.Sugar()
+	for range ticker.C {
+		count, err := reminderSvc.ProcessPending(context.Background())
+		if err != nil {
+			sugar.Errorf("reminder scheduler error: %v", err)
+			continue
+		}
+		if count > 0 {
+			sugar.Infof("reminder scheduler: processed %d reminders", count)
+		}
+	}
 }
