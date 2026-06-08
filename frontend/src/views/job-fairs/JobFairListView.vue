@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import PageHeader from '@/components/business/PageHeader.vue'
@@ -8,11 +8,12 @@ import { getJobFairListApi } from '@/api/modules/jobFair'
 import { addCalendarEventApi } from '@/api/modules/calendar'
 import { useAuthStore } from '@/stores'
 import { usePagination } from '@/composables/usePagination'
-import type { JobFair } from '@/types'
+import { CAMPUS_OPTIONS } from '@/constants'
+import type { JobFair, JobFairQuery } from '@/types'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const { page, pageSize, total, setTotal } = usePagination()
+const { page, pageSize, total, totalPages, setTotal } = usePagination()
 
 const loading = ref(false)
 const list = ref<JobFair[]>([])
@@ -25,17 +26,10 @@ const filters = reactive({
   campus: 'all',
 })
 
-const CAMPUS_OPTIONS = [
-  { label: '全部校区', value: 'all' },
-  { label: '本部校区', value: 'main' },
-  { label: '沙河校区', value: 'shahe' },
-  { label: '线上', value: 'online' },
-]
-
 async function fetchList() {
   loading.value = true
   try {
-    const params: Record<string, unknown> = {
+    const params: JobFairQuery = {
       page: page.value,
       pageSize: pageSize.value,
     }
@@ -44,7 +38,7 @@ async function fetchList() {
     if (filters.endDate) params.endDate = filters.endDate
     if (filters.campus !== 'all') params.campus = filters.campus
 
-    const res = await getJobFairListApi(params as any)
+    const res = await getJobFairListApi(params)
     list.value = res.list
     setTotal(Number(res.total))
   } catch {
@@ -65,6 +59,24 @@ function handleReset() {
   filters.endDate = ''
   filters.campus = 'all'
   page.value = 1
+  fetchList()
+}
+
+function setCampus(value: string) {
+  filters.campus = value
+  handleSearch()
+}
+
+function handleDateChange() {
+  if (filters.startDate && filters.endDate && filters.startDate > filters.endDate) {
+    ElMessage.warning('开始日期不能晚于结束日期')
+    return
+  }
+  handleSearch()
+}
+
+function handlePageChange(newPage: number) {
+  page.value = newPage
   fetchList()
 }
 
@@ -113,8 +125,6 @@ function isDeadlinePassed(deadline?: string) {
   return new Date(deadline).getTime() < Date.now()
 }
 
-const totalPages = computed(() => Math.ceil(total.value / pageSize.value) || 1)
-
 onMounted(fetchList)
 </script>
 
@@ -156,12 +166,14 @@ onMounted(fetchList)
             v-model="filters.startDate"
             type="date"
             class="rounded-lg border border-ink-200 bg-ink-50 px-3 py-1.5 text-xs text-ink-600 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            @change="handleDateChange"
           />
           <span class="text-ink-400">至</span>
           <input
             v-model="filters.endDate"
             type="date"
             class="rounded-lg border border-ink-200 bg-ink-50 px-3 py-1.5 text-xs text-ink-600 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            @change="handleDateChange"
           />
         </div>
         <div class="flex items-center gap-2">
@@ -173,7 +185,7 @@ onMounted(fetchList)
               type="button"
               class="filter-pill rounded-lg px-3 py-1.5 text-xs font-medium"
               :class="filters.campus === opt.value ? 'active' : 'bg-ink-50 text-ink-600'"
-              @click="filters.campus = opt.value"
+              @click="setCampus(opt.value)"
             >
               {{ opt.label }}
             </button>
@@ -299,6 +311,6 @@ onMounted(fetchList)
       </article>
     </div>
 
-    <AppPagination :page="page" :total-pages="totalPages" @change="page = $event; fetchList()" />
+    <AppPagination :page="page" :total-pages="totalPages" @change="handlePageChange" />
   </div>
 </template>

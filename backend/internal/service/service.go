@@ -32,8 +32,8 @@ func NewServices(db *gorm.DB, cfg *config.Config, jwtManager *jwt.Manager) *Serv
 		User:           NewUserService(repos.User, repos.Preference),
 		CareerTalk:     NewCareerTalkService(repos.CareerTalk),
 		JobFair:        NewJobFairService(repos.JobFair),
-		Recommendation: NewRecommendationService(repos.Recommendation),
-		Calendar:       NewCalendarService(repos.Calendar),
+		Recommendation: NewRecommendationService(repos.User, repos.Preference, repos.CareerTalk, repos.JobFair),
+		Calendar:       NewCalendarService(repos.Calendar, repos.CareerTalk, repos.JobFair, repos.Preference),
 		Reminder:       NewReminderService(repos.Reminder),
 		Admin:          NewAdminService(repos.Admin),
 	}
@@ -57,6 +57,8 @@ type UserService interface {
 type CareerTalkService interface {
 	List(ctx context.Context, q *request.CareerTalkQuery, userID uint64) (list interface{}, total int64, page, pageSize int, err error)
 	GetByID(ctx context.Context, id, userID uint64) (interface{}, error)
+	ListUpcomingWithin24h(ctx context.Context) (interface{}, error)
+	ListHotCompanies(ctx context.Context, limit int) (interface{}, error)
 }
 
 // JobFairService 双选会服务
@@ -67,7 +69,7 @@ type JobFairService interface {
 
 // RecommendationService 推荐服务
 type RecommendationService interface {
-	List(ctx context.Context, userID uint64, c *gin.Context) (list interface{}, total int64, page, pageSize int, err error)
+	List(ctx context.Context, userID uint64, c *gin.Context) (*dtoresp.RecommendationListResult, error)
 	Dismiss(ctx context.Context, userID, refID uint64, eventType string) error
 }
 

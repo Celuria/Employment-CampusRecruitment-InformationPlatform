@@ -1,13 +1,43 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
+import { getCareerTalkUpcomingApi, getCareerTalkHotCompaniesApi } from '@/api/modules/careerTalk'
+import { formatUpcomingLabel, getUpcomingColor, normalizeCareerTalk } from '@/utils/careerTalk'
+import type { CareerTalk, HotCompany } from '@/types'
 
-const upcomingEvents = [
-  { id: 1, company: '字节', title: '字节跳动技术专场', time: '今天 14:00 · 本部', color: 'bg-brand-100 text-brand-700' },
-  { id: 2, company: '阿里', title: '阿里巴巴星耀计划', time: '明天 19:00 · 沙河', color: 'bg-orange-100 text-orange-700' },
-  { id: 3, company: '腾讯', title: '腾讯技术大咖面对面', time: '1月17日 15:30 · 本部', color: 'bg-blue-100 text-blue-700' },
-]
+const emit = defineEmits<{
+  filterCompany: [company: string]
+}>()
 
-const hotCompanies = ['字节跳动', '阿里巴巴', '腾讯', '华为', '美团', '滴滴出行']
+const upcomingLoading = ref(true)
+const hotLoading = ref(true)
+const upcomingEvents = ref<CareerTalk[]>([])
+const hotCompanies = ref<HotCompany[]>([])
+
+async function fetchSidebar() {
+  upcomingLoading.value = true
+  hotLoading.value = true
+  try {
+    const [upcoming, hot] = await Promise.all([
+      getCareerTalkUpcomingApi(),
+      getCareerTalkHotCompaniesApi(6),
+    ])
+    upcomingEvents.value = upcoming.map(normalizeCareerTalk)
+    hotCompanies.value = hot
+  } catch {
+    upcomingEvents.value = []
+    hotCompanies.value = []
+  } finally {
+    upcomingLoading.value = false
+    hotLoading.value = false
+  }
+}
+
+function handleCompanyClick(company: string) {
+  emit('filterCompany', company)
+}
+
+onMounted(fetchSidebar)
 </script>
 
 <template>
@@ -20,24 +50,37 @@ const hotCompanies = ['字节跳动', '阿里巴巴', '腾讯', '华为', '美�
           查看全部
         </RouterLink>
       </div>
-      <div class="space-y-3">
+
+      <div v-if="upcomingLoading" class="space-y-3">
+        <div v-for="i in 2" :key="i" class="h-14 animate-pulse rounded-xl bg-ink-100" />
+      </div>
+
+      <p v-else-if="upcomingEvents.length === 0" class="py-4 text-center text-xs text-ink-400">
+        24 小时内暂无即将开始的宣讲会
+      </p>
+
+      <div v-else class="space-y-3">
         <RouterLink
-          v-for="event in upcomingEvents"
+          v-for="(event, index) in upcomingEvents"
           :key="event.id"
           :to="`/career-talks/${event.id}`"
           class="group flex cursor-pointer gap-3 rounded-xl p-3 transition-colors hover:bg-ink-50"
         >
           <div
             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-            :class="event.color.split(' ')[0]"
+            :class="getUpcomingColor(index).split(' ')[0]"
           >
-            <span class="text-xs font-bold" :class="event.color.split(' ')[1]">{{ event.company }}</span>
+            <span class="text-xs font-bold" :class="getUpcomingColor(index).split(' ')[1]">
+              {{ event.company.slice(0, 2) }}
+            </span>
           </div>
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-medium text-ink-900 transition-colors group-hover:text-brand-600">
               {{ event.title }}
             </p>
-            <p class="mt-0.5 text-xs text-ink-500">{{ event.time }}</p>
+            <p class="mt-0.5 text-xs text-ink-500">
+              {{ formatUpcomingLabel(event.startTime, event.campus) }}
+            </p>
           </div>
         </RouterLink>
       </div>
@@ -47,19 +90,28 @@ const hotCompanies = ['字节跳动', '阿里巴巴', '腾讯', '华为', '美�
     <div class="sidebar-card rounded-2xl bg-white p-5">
       <div class="mb-4 flex items-center justify-between">
         <h3 class="text-sm font-bold text-ink-900">热门公司</h3>
-        <a href="#" class="text-xs font-medium text-brand-600 hover:text-brand-700">更多</a>
       </div>
-      <div class="grid grid-cols-2 gap-2">
+
+      <div v-if="hotLoading" class="grid grid-cols-2 gap-2">
+        <div v-for="i in 4" :key="i" class="h-12 animate-pulse rounded-xl bg-ink-100" />
+      </div>
+
+      <p v-else-if="hotCompanies.length === 0" class="py-4 text-center text-xs text-ink-400">
+        暂无热门公司数据
+      </p>
+
+      <div v-else class="grid grid-cols-2 gap-2">
         <button
-          v-for="company in hotCompanies"
-          :key="company"
+          v-for="item in hotCompanies"
+          :key="item.company"
           type="button"
           class="flex cursor-pointer items-center gap-2 rounded-xl border border-ink-100 p-2.5 transition-all hover:border-brand-200 hover:bg-brand-50"
+          @click="handleCompanyClick(item.company)"
         >
           <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
-            <span class="text-[10px] font-bold text-brand-700">{{ company.slice(0, 2) }}</span>
+            <span class="text-[10px] font-bold text-brand-700">{{ item.company.slice(0, 2) }}</span>
           </div>
-          <span class="text-xs font-medium text-ink-700">{{ company }}</span>
+          <span class="truncate text-xs font-medium text-ink-700">{{ item.company }}</span>
         </button>
       </div>
     </div>

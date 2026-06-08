@@ -47,6 +47,8 @@ func registerOptionalAuthRoutes(v1 *gin.RouterGroup, h *handler.Handler, jwtMana
 	optional := v1.Group("", middleware.OptionalAuth(jwtManager))
 	{
 		optional.GET("/career-talks", h.CareerTalk.List)
+		optional.GET("/career-talks/upcoming", h.CareerTalk.Upcoming)
+		optional.GET("/career-talks/hot-companies", h.CareerTalk.HotCompanies)
 		optional.GET("/career-talks/:id", h.CareerTalk.Detail)
 		optional.GET("/job-fairs", h.JobFair.List)
 		optional.GET("/job-fairs/:id", h.JobFair.Detail)

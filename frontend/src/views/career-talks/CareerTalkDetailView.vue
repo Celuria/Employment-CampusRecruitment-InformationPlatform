@@ -5,6 +5,8 @@ import { ElMessage } from 'element-plus'
 import { getCareerTalkDetailApi } from '@/api/modules/careerTalk'
 import { addCalendarEventApi } from '@/api/modules/calendar'
 import { useAuthStore } from '@/stores'
+import { normalizeCareerTalk } from '@/utils/careerTalk'
+import { formatDateTime } from '@/utils/format'
 import type { CareerTalk } from '@/types'
 
 const route = useRoute()
@@ -29,7 +31,7 @@ const formatLabel: Record<string, string> = {
 async function fetchDetail() {
   loading.value = true
   try {
-    talk.value = await getCareerTalkDetailApi(Number(route.params.id))
+    talk.value = normalizeCareerTalk(await getCareerTalkDetailApi(Number(route.params.id)))
   } catch {
     // 错误由拦截器处理
   } finally {
@@ -56,14 +58,6 @@ async function handleAddToCalendar() {
   } finally {
     calendarLoading.value = false
   }
-}
-
-function formatDateTime(dateStr?: string) {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric', month: 'long', day: 'numeric',
-    weekday: 'short', hour: '2-digit', minute: '2-digit',
-  })
 }
 
 onMounted(fetchDetail)
@@ -140,9 +134,9 @@ onMounted(fetchDetail)
             </div>
 
             <!-- 描述 -->
-            <div v-if="(talk as any).description">
+            <div v-if="talk.description">
               <p class="mb-2 text-sm font-semibold text-ink-800">活动详情</p>
-              <p class="whitespace-pre-wrap text-sm leading-relaxed text-ink-700">{{ (talk as any).description }}</p>
+              <p class="whitespace-pre-wrap text-sm leading-relaxed text-ink-700">{{ talk.description }}</p>
             </div>
           </div>
         </div>

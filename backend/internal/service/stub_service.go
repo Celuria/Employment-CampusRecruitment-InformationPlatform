@@ -45,6 +45,25 @@ func (s *careerTalkService) GetByID(ctx context.Context, id, _ uint64) (interfac
 	return talk, nil
 }
 
+func (s *careerTalkService) ListUpcomingWithin24h(ctx context.Context) (interface{}, error) {
+	list, err := s.repo.ListUpcomingWithin24h(ctx, 20)
+	if err != nil {
+		return nil, apperrors.ErrInternalServer
+	}
+	return list, nil
+}
+
+func (s *careerTalkService) ListHotCompanies(ctx context.Context, limit int) (interface{}, error) {
+	if limit <= 0 || limit > 20 {
+		limit = 6
+	}
+	list, err := s.repo.ListHotCompanies(ctx, limit)
+	if err != nil {
+		return nil, apperrors.ErrInternalServer
+	}
+	return list, nil
+}
+
 type jobFairService struct{ repo repository.JobFairRepository }
 
 func NewJobFairService(repo repository.JobFairRepository) JobFairService {
@@ -70,43 +89,6 @@ func (s *jobFairService) GetByID(ctx context.Context, id, _ uint64) (interface{}
 		return nil, apperrors.ErrInternalServer
 	}
 	return fair, nil
-}
-
-type recommendationService struct{}
-
-func NewRecommendationService(_ repository.RecommendationRepository) RecommendationService {
-	return &recommendationService{}
-}
-
-func (s *recommendationService) List(_ context.Context, _ uint64, _ *gin.Context) (interface{}, int64, int, int, error) {
-	list, total, page, pageSize := stubListService{}.emptyPage()
-	return list, total, page, pageSize, nil
-}
-
-func (s *recommendationService) Dismiss(_ context.Context, _, _ uint64, _ string) error {
-	return nil
-}
-
-type calendarService struct{ repo repository.CalendarRepository }
-
-func NewCalendarService(repo repository.CalendarRepository) CalendarService {
-	return &calendarService{repo: repo}
-}
-
-func (s *calendarService) List(_ context.Context, _ uint64, _ *gin.Context) (interface{}, error) {
-	return []interface{}{}, nil
-}
-
-func (s *calendarService) Create(_ context.Context, _ uint64, _ *request.CreateCalendarEventRequest) (interface{}, error) {
-	return map[string]interface{}{"message": "待实现"}, nil
-}
-
-func (s *calendarService) Update(_ context.Context, _, _ uint64, _ *request.UpdateCalendarEventRequest) (interface{}, error) {
-	return map[string]interface{}{"message": "待实现"}, nil
-}
-
-func (s *calendarService) Delete(_ context.Context, _, _ uint64) error {
-	return nil
 }
 
 type reminderService struct{}

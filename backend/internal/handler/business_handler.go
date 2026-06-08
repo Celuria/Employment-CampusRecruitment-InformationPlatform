@@ -48,6 +48,29 @@ func (h *CareerTalkHandler) Detail(c *gin.Context) {
 	response.OK(c, data)
 }
 
+func (h *CareerTalkHandler) Upcoming(c *gin.Context) {
+	data, err := h.svc.ListUpcomingWithin24h(c.Request.Context())
+	if err != nil {
+		abortError(c, toAppError(err))
+		return
+	}
+	response.OK(c, data)
+}
+
+func (h *CareerTalkHandler) HotCompanies(c *gin.Context) {
+	limit, err := parseUint(c.DefaultQuery("limit", "6"))
+	if err != nil {
+		abortError(c, apperrors.ErrBadRequest)
+		return
+	}
+	data, svcErr := h.svc.ListHotCompanies(c.Request.Context(), int(limit))
+	if svcErr != nil {
+		abortError(c, toAppError(svcErr))
+		return
+	}
+	response.OK(c, data)
+}
+
 type JobFairHandler struct {
 	svc service.JobFairService
 }
@@ -99,12 +122,12 @@ func (h *RecommendationHandler) List(c *gin.Context) {
 		abortError(c, apperrors.ErrUnauthorized)
 		return
 	}
-	list, total, page, pageSize, err := h.svc.List(c.Request.Context(), userID, c)
+	result, err := h.svc.List(c.Request.Context(), userID, c)
 	if err != nil {
 		abortError(c, toAppError(err))
 		return
 	}
-	response.Page(c, list, total, page, pageSize)
+	response.OK(c, result)
 }
 
 func (h *RecommendationHandler) Dismiss(c *gin.Context) {

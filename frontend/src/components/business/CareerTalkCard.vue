@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDateTime } from '@/utils/format'
 import type { CareerTalk } from '@/types'
 
 defineProps<{
@@ -26,11 +27,12 @@ const formatLabel: Record<string, string> = {
 
 <template>
   <article
-    class="card-shadow flex gap-5 rounded-2xl bg-white p-6"
+    class="card-shadow group flex cursor-pointer gap-5 rounded-2xl bg-white p-6 transition-all hover:shadow-md"
     :class="{
       'border-2 border-brand-200': item.inCalendar,
       'opacity-75': item.status === 'ended',
     }"
+    @click="$emit('viewDetail', item.id)"
   >
     <div class="shrink-0">
       <div
@@ -44,7 +46,7 @@ const formatLabel: Record<string, string> = {
       <div class="mb-2 flex items-start justify-between">
         <div class="min-w-0">
           <h3
-            class="mb-1 truncate text-lg font-bold text-ink-900"
+            class="mb-1 truncate text-lg font-bold text-ink-900 transition-colors group-hover:text-brand-600"
             :class="item.status === 'ended' ? 'text-ink-700' : ''"
           >
             {{ item.title }}
@@ -53,7 +55,7 @@ const formatLabel: Record<string, string> = {
             {{ item.company }} · {{ item.industry }} · {{ item.companySize }}
           </p>
         </div>
-        <div class="ml-4 flex shrink-0 gap-2">
+        <div class="ml-4 flex shrink-0 gap-2" @click.stop>
           <template v-if="item.status === 'ended'">
             <span class="rounded-lg bg-ink-100 px-3 py-2 text-xs font-medium text-ink-400">
               已结束
@@ -106,7 +108,7 @@ const formatLabel: Record<string, string> = {
         </div>
       </div>
       <div class="mb-3 flex items-center gap-4 text-sm text-ink-600">
-        <span>{{ item.startTime }}</span>
+        <span>{{ formatDateTime(item.startTime) }}</span>
         <span>{{ item.location }}</span>
       </div>
       <div class="flex items-center gap-2">

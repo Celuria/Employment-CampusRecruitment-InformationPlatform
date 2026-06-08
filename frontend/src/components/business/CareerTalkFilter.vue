@@ -1,23 +1,24 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { CAMPUS_OPTIONS, DATE_FILTER_OPTIONS, INDUSTRY_OPTIONS, SORT_OPTIONS } from '@/constants'
 
-const keyword = ref('')
-const dateFilter = ref('all')
-const campus = ref('all')
-const industry = ref('all')
-const sortBy = ref('time_asc')
+const keyword = defineModel<string>('keyword', { default: '' })
+const dateRange = defineModel<string>('dateRange', { default: 'all' })
+const campus = defineModel<string>('campus', { default: 'all' })
+const industry = defineModel<string>('industry', { default: 'all' })
+const sortBy = defineModel<string>('sortBy', { default: 'time_asc' })
 
 const emit = defineEmits<{
   search: []
 }>()
 
 function setDateFilter(value: string) {
-  dateFilter.value = value
+  dateRange.value = value
+  emit('search')
 }
 
 function setIndustry(value: string) {
   industry.value = value
+  emit('search')
 }
 
 function handleSearch() {
@@ -69,7 +70,7 @@ function handleSearch() {
             type="button"
             class="filter-pill rounded-lg px-3 py-1.5 text-xs font-medium"
             :class="
-              dateFilter === opt.value
+              dateRange === opt.value
                 ? 'active'
                 : 'bg-ink-50 text-ink-600'
             "
@@ -85,6 +86,7 @@ function handleSearch() {
         <select
           v-model="campus"
           class="cursor-pointer rounded-lg border-none bg-ink-50 px-3 py-1.5 text-xs font-medium text-ink-600 focus:ring-2 focus:ring-brand-300"
+          @change="handleSearch"
         >
           <option v-for="opt in CAMPUS_OPTIONS" :key="opt.value" :value="opt.value">
             {{ opt.label }}
@@ -117,6 +119,7 @@ function handleSearch() {
         <select
           v-model="sortBy"
           class="cursor-pointer rounded-lg border-none bg-ink-50 px-3 py-1.5 text-xs font-medium text-ink-600 focus:ring-2 focus:ring-brand-300"
+          @change="handleSearch"
         >
           <option v-for="opt in SORT_OPTIONS" :key="opt.value" :value="opt.value">
             {{ opt.label }}
