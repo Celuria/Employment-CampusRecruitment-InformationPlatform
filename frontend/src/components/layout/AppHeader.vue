@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores'
 import { APP_NAME } from '@/constants'
+import { getReminderLogsApi } from '@/api'
+import type { ReminderLog } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -65,6 +67,70 @@ function displayName() {
   if (!info) return '用户'
   return info.name || info.username
 }
+
+// ============ 消息通知 ============
+const LS_KEY = 'reminder_last_seen_at'
+
+const reminders = ref<ReminderLog[]>([])
+const notificationVisible = ref(false)
+const notificationLoading = ref(false)
+const lastSeen = ref(localStorage.getItem(LS_KEY) || '')
+
+function persistLastSeen(time: string) {
+  localStorage.setItem(LS_KEY, time)
+  lastSeen.value = time
+}
+
+const hasNewReminders = computed(() => {
+  if (!lastSeen.value) return reminders.value.length > 0
+  return reminders.value.some((r) => r.sentTime && r.sentTime > lastSeen.value)
+})
+
+async function fetchReminders() {
+  if (!authStore.isLoggedIn) return
+  notificationLoading.value = true
+  try {
+    const result = await getReminderLogsApi({ page: 1, pageSize: 5 })
+    reminders.value = result.list
+  } catch {
+    reminders.value = []
+  } finally {
+    notificationLoading.value = false
+  }
+}
+
+async function onNotificationShow() {
+  await fetchReminders()
+  // 打开弹窗时，将最新 sentTime 记为已读时间
+  const latest = reminders.value
+    .filter((r) => r.sentTime)
+    .map((r) => r.sentTime!)
+    .sort()
+    .reverse()[0]
+  if (latest) {
+    persistLastSeen(latest)
+  } else if (reminders.value.length === 0) {
+    // 如果没有消息，也更新时间戳，避免下次误报
+    persistLastSeen(new Date().toISOString())
+  }
+}
+
+function formatTime(iso: string): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function goReminders() {
+  notificationVisible.value = false
+  router.push('/profile/reminders')
+}
+
+// 自动获取一次
+watch(() => authStore.isLoggedIn, (val) => {
+  if (val) fetchReminders()
+}, { immediate: true })
 </script>
 
 <template>
@@ -106,21 +172,100 @@ function displayName() {
       <!-- 用户区域 -->
       <div class="flex items-center gap-4">
         <template v-if="authStore.isLoggedIn">
-          <button
-            type="button"
-            class="relative rounded-lg p-2 transition-colors hover:bg-ink-100"
-            title="通知"
+          <el-popover
+            v-model:visible="notificationVisible"
+            trigger="click"
+            placement="bottom-end"
+            :width="360"
+            :offset="8"
+            popper-class="notification-popover"
+            @show="onNotificationShow"
           >
-            <svg class="h-5 w-5 text-ink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-              />
-            </svg>
-            <span class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
-          </button>
+            <template #reference>
+              <button
+                type="button"
+                class="relative rounded-lg p-2 transition-colors hover:bg-ink-100"
+                title="消息通知"
+              >
+                <svg class="h-5 w-5 text-ink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                  />
+                </svg>
+                <span
+                  v-if="hasNewReminders"
+                  class="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"
+                />
+              </button>
+            </template>
+
+            <!-- 弹窗内容 -->
+            <div class="flex flex-col">
+              <div class="flex items-center justify-between border-b border-ink-100 pb-3">
+                <span class="text-sm font-semibold text-ink-800">消息通知</span>
+                <button
+                  type="button"
+                  class="text-xs text-brand-600 hover:text-brand-700"
+                  @click="goReminders"
+                >
+                  查看全部
+                </button>
+              </div>
+
+              <div v-if="notificationLoading" class="flex items-center justify-center py-10">
+                <span class="text-sm text-ink-400">加载中...</span>
+              </div>
+
+              <div v-else-if="reminders.length === 0" class="flex flex-col items-center py-10">
+                <svg class="mb-3 h-10 w-10 text-ink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.5"
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                  />
+                </svg>
+                <span class="text-sm text-ink-400">暂无消息</span>
+              </div>
+
+              <div v-else class="-mx-3 max-h-80 overflow-y-auto">
+                <button
+                  v-for="reminder in reminders"
+                  :key="reminder.id"
+                  type="button"
+                  class="flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-ink-50"
+                  @click="goReminders"
+                >
+                  <div
+                    class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                    :class="reminder.status === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'"
+                  >
+                    <svg v-if="reminder.status === 'success'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-ink-700 truncate">{{ reminder.eventTitle }}</p>
+                    <p class="mt-0.5 text-xs text-ink-400">
+                      {{ reminder.scheduledTime ? formatTime(reminder.scheduledTime) : '' }}
+                    </p>
+                  </div>
+                  <span
+                    class="mt-1 shrink-0 text-xs"
+                    :class="reminder.status === 'success' ? 'text-green-500' : 'text-red-400'"
+                  >
+                    {{ reminder.status === 'success' ? '已提醒' : '失败' }}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </el-popover>
           <el-dropdown trigger="click" @command="handleUserCommand">
             <button
               type="button"
