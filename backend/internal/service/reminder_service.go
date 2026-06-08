@@ -66,6 +66,7 @@ func (s *reminderServiceImpl) GenerateReminders(ctx context.Context, event *mode
 			CalendarEventID: event.ID,
 			UserID:          event.UserID,
 			EventTitle:      event.Title,
+			EventLocation:   event.Location,
 			EventType:       event.EventType,
 			RemindBefore:    rb,
 			ScheduledTime:   scheduledTime,
@@ -147,7 +148,7 @@ func (s *reminderServiceImpl) sendReminderEmail(rm model.ReminderLog) {
 		eventLabel,
 		rm.EventTitle,
 		eventStartTime.Format("2006-01-02 15:04"),
-		"-",
+		rm.EventLocation,
 	)
 
 	if err := s.emailSender.Send([]string{user.Email}, subject, body); err != nil {

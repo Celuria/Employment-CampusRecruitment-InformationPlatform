@@ -69,6 +69,7 @@ export interface ReminderLog {
   id: number
   calendarEventId?: number
   eventTitle: string
+  eventLocation?: string
   eventType?: string
   remindBefore?: string
   scheduledTime: string

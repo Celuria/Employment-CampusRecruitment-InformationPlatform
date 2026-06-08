@@ -17,6 +17,7 @@ type ReminderLog struct {
 	CalendarEventID uint64         `gorm:"index:idx_reminder_calendar_event_id;not null" json:"calendarEventId"`
 	UserID          uint64         `gorm:"index:idx_reminder_user_id;not null" json:"-"`
 	EventTitle      string         `gorm:"size:200" json:"eventTitle"`
+	EventLocation   string         `gorm:"size:256" json:"eventLocation"`
 	EventType       EventType      `gorm:"size:16" json:"eventType"`
 	RemindBefore    string         `gorm:"size:8" json:"remindBefore"`
 	ScheduledTime   time.Time      `gorm:"index:idx_reminder_status_scheduled;not null" json:"scheduledTime"`
