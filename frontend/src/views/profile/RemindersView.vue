@@ -39,23 +39,26 @@ function formatTime(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-function statusLabel(status: string): string {
-  switch (status) {
-    case 'pending': return '待提醒'
-    case 'sent': return '已提醒'
-    case 'failed': return '失败'
-    case 'cancelled': return '已取消'
-    default: return status
+/**
+ * 根据 scheduledTime（提醒发出时间）+ remindBefore（提前量）反推活动实际开始时间
+ */
+function getEventStartTime(item: ReminderLog): string {
+  if (!item.scheduledTime || !item.remindBefore) return '-'
+  const scheduled = new Date(item.scheduledTime)
+  switch (item.remindBefore) {
+    case '1h':
+      scheduled.setHours(scheduled.getHours() + 1)
+      break
+    case '1d':
+      scheduled.setDate(scheduled.getDate() + 1)
+      break
+    case '3d':
+      scheduled.setDate(scheduled.getDate() + 3)
+      break
+    default:
+      scheduled.setDate(scheduled.getDate() + 1)
   }
-}
-
-function remindLabel(rb: string): string {
-  switch (rb) {
-    case '1h': return '提前 1 小时'
-    case '1d': return '提前 1 天'
-    case '3d': return '提前 3 天'
-    default: return rb
-  }
+  return formatTime(scheduled.toISOString())
 }
 
 watch(page, () => fetchData())
@@ -89,9 +92,7 @@ onMounted(fetchData)
           <thead class="bg-ink-50 text-xs font-medium uppercase text-ink-500">
             <tr>
               <th class="px-5 py-3">活动名称</th>
-              <th class="px-5 py-3">提醒方式</th>
-              <th class="px-5 py-3">计划提醒时间</th>
-              <th class="px-5 py-3">状态</th>
+              <th class="px-5 py-3">活动开始时间</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-ink-100">
@@ -110,23 +111,7 @@ onMounted(fetchData)
                 </span>
               </td>
               <td class="px-5 py-3 text-ink-600">
-                {{ item.remindBefore ? remindLabel(item.remindBefore) : '-' }}
-              </td>
-              <td class="px-5 py-3 text-ink-500">
-                {{ formatTime(item.scheduledTime) }}
-              </td>
-              <td class="px-5 py-3">
-                <span
-                  class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                  :class="{
-                    'bg-yellow-100 text-yellow-700': item.status === 'pending',
-                    'bg-green-100 text-green-700': item.status === 'sent',
-                    'bg-red-100 text-red-600': item.status === 'failed',
-                    'bg-ink-100 text-ink-500': item.status === 'cancelled',
-                  }"
-                >
-                  {{ statusLabel(item.status) }}
-                </span>
+                {{ getEventStartTime(item) }}
               </td>
             </tr>
           </tbody>

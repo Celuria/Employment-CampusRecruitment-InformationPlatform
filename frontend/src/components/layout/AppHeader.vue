@@ -122,6 +122,18 @@ function formatTime(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+function eventStartTime(item: ReminderLog): string {
+  if (!item.scheduledTime || !item.remindBefore) return '-'
+  const d = new Date(item.scheduledTime)
+  switch (item.remindBefore) {
+    case '1h': d.setHours(d.getHours() + 1); break
+    case '1d': d.setDate(d.getDate() + 1); break
+    case '3d': d.setDate(d.getDate() + 3); break
+    default: d.setDate(d.getDate() + 1)
+  }
+  return formatTime(d.toISOString())
+}
+
 function goReminders() {
   notificationVisible.value = false
   router.push('/profile/reminders')
@@ -275,7 +287,7 @@ onUnmounted(() => {
                   <div class="min-w-0 flex-1">
                     <p class="text-sm font-medium text-ink-700 truncate">{{ reminder.eventTitle }}</p>
                     <p class="mt-0.5 text-xs text-ink-400">
-                      {{ reminder.scheduledTime ? formatTime(reminder.scheduledTime) : '' }}
+                      开始时间：{{ eventStartTime(reminder) }}
                     </p>
                   </div>
                   <span

@@ -128,6 +128,9 @@ func (s *reminderServiceImpl) sendReminderEmail(rm model.ReminderLog) {
 		eventLabel = "双选会"
 	}
 
+	// 反推活动实际开始时间 = 提醒时间 + 提前量
+	eventStartTime := addRemindBefore(rm.ScheduledTime, rm.RemindBefore)
+
 	subject := fmt.Sprintf("【活动提醒】%s - %s", rm.EventTitle, eventLabel)
 	body := fmt.Sprintf(`您好 %s，
 
@@ -143,7 +146,7 @@ func (s *reminderServiceImpl) sendReminderEmail(rm model.ReminderLog) {
 		user.Name,
 		eventLabel,
 		rm.EventTitle,
-		rm.ScheduledTime.Format("2006-01-02 15:04"),
+		eventStartTime.Format("2006-01-02 15:04"),
 		"-",
 	)
 
@@ -165,5 +168,19 @@ func calculateScheduledTime(startTime time.Time, remindBefore string) time.Time 
 		return startTime.Add(-72 * time.Hour)
 	default:
 		return startTime.Add(-24 * time.Hour) // 默认提前一天
+	}
+}
+
+// addRemindBefore 反推：提醒时间 + 提前量 = 活动开始时间
+func addRemindBefore(scheduledTime time.Time, remindBefore string) time.Time {
+	switch remindBefore {
+	case "1h":
+		return scheduledTime.Add(1 * time.Hour)
+	case "1d":
+		return scheduledTime.Add(24 * time.Hour)
+	case "3d":
+		return scheduledTime.Add(72 * time.Hour)
+	default:
+		return scheduledTime.Add(24 * time.Hour)
 	}
 }

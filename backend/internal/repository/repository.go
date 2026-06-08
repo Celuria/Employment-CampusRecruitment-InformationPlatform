@@ -695,7 +695,9 @@ func (r *reminderRepository) BatchCreate(ctx context.Context, logs []model.Remin
 func (r *reminderRepository) ListByUser(ctx context.Context, userID uint64, page, pageSize int) ([]model.ReminderLog, int64, error) {
 	var list []model.ReminderLog
 	var total int64
-	query := r.db.WithContext(ctx).Model(&model.ReminderLog{}).Where("user_id = ?", userID)
+	// 只显示已处理的通知（sent/failed/cancelled），未到时间的 pending 不展示
+	query := r.db.WithContext(ctx).Model(&model.ReminderLog{}).
+		Where("user_id = ? AND status <> ?", userID, model.ReminderPending)
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
