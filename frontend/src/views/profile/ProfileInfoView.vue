@@ -7,7 +7,7 @@ import {
   COLLEGE_MAJOR_MAP,
   COLLEGE_OPTIONS,
   GRADE_OPTIONS,
-  POSITION_SUGGESTIONS,
+  getPositionSuggestions,
 } from '@/constants/profile'
 import type { UpdateProfileForm, UserInfo } from '@/types'
 
@@ -37,6 +37,9 @@ const majorOptions = computed(() => {
   return COLLEGE_MAJOR_MAP[form.college] || []
 })
 
+// ✅ 新增：岗位推荐（基于专业）
+const positionSuggestions = computed(() => getPositionSuggestions(form.major))
+
 const rules: FormRules<UpdateProfileForm> = {
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
   college: [{ required: true, message: '请选择学院', trigger: 'change' }],
@@ -63,11 +66,23 @@ const rules: FormRules<UpdateProfileForm> = {
   ],
 }
 
+// ✅ 学院变化：清空专业 + 岗位
 watch(
   () => form.college,
   (college, prev) => {
     if (prev && college !== prev) {
       form.major = ''
+      form.targetPositions = []
+    }
+  },
+)
+
+// ✅ 专业变化：清空岗位
+watch(
+  () => form.major,
+  (major, prev) => {
+    if (prev && major !== prev) {
+      form.targetPositions = []
     }
   },
 )
@@ -240,11 +255,11 @@ onMounted(() => {
             filterable
             allow-create
             default-first-option
-            placeholder="选择或输入意向岗位，至少 1 个"
+            placeholder="根据专业推荐，也可自由输入"
             class="w-full"
           >
             <el-option
-              v-for="pos in POSITION_SUGGESTIONS"
+              v-for="pos in positionSuggestions"
               :key="pos"
               :label="pos"
               :value="pos"

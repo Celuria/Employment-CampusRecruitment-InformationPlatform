@@ -32,16 +32,53 @@ func NewServices(db *gorm.DB, cfg *config.Config, jwtManager *jwt.Manager) *Serv
 	emailSender := email.NewSender(cfg.Email)
 	reminderSvc := NewReminderService(repos.Reminder, repos.User, emailSender)
 
-	return &Services{
-		Auth:           NewAuthService(repos.User, jwtManager, cfg.Auth),
-		User:           NewUserService(repos.User, repos.Preference),
-		CareerTalk:     NewCareerTalkService(repos.CareerTalk),
-		JobFair:        NewJobFairService(repos.JobFair),
-		Recommendation: NewRecommendationService(repos.User, repos.Preference, repos.CareerTalk, repos.JobFair),
-		Calendar:       NewCalendarService(repos.Calendar, repos.CareerTalk, repos.JobFair, repos.Preference, reminderSvc),
-		Reminder:       reminderSvc,
-		Admin:          NewAdminService(repos.CareerTalk, repos.JobFair, repos.User, repos.AuditLog, repos.SyncLog),
-	}
+return &Services{
+    Auth: NewAuthService(
+        repos.User,
+        jwtManager,
+        cfg.Auth,
+    ),
+
+    User: NewUserService(
+        repos.User,
+        repos.Preference,
+    ),
+
+    CareerTalk: NewCareerTalkService(
+        repos.CareerTalk,
+        repos.Calendar,
+    ),
+
+    JobFair: NewJobFairService(
+        repos.JobFair,
+        repos.Calendar,
+    ),
+
+    Recommendation: NewRecommendationService(
+        repos.User,
+        repos.Preference,
+        repos.CareerTalk,
+        repos.JobFair,
+    ),
+
+    Calendar: NewCalendarService(
+        repos.Calendar,
+        repos.CareerTalk,
+        repos.JobFair,
+        repos.Preference,
+        reminderSvc,
+    ),
+
+    Reminder: reminderSvc,
+
+    Admin: NewAdminService(
+        repos.CareerTalk,
+        repos.JobFair,
+        repos.User,
+        repos.AuditLog,
+        repos.SyncLog,
+    ),
+}
 }
 
 // AuthService 认证服务

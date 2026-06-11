@@ -515,12 +515,14 @@ func (r *jobFairRepository) RefreshSyncedAt(ctx context.Context, sourceType stri
 
 // CalendarRepository 日历数据访问
 type CalendarRepository interface {
-	ListByUser(ctx context.Context, userID uint64, startDate, endDate, eventType string) ([]model.CalendarEvent, error)
-	FindByID(ctx context.Context, userID, id uint64) (*model.CalendarEvent, error)
-	ExistsByUserEvent(ctx context.Context, userID, refID uint64, eventType string) (bool, error)
-	Create(ctx context.Context, event *model.CalendarEvent) error
-	Update(ctx context.Context, userID, id uint64, note string, remindBefore model.JSONStrings) error
-	Delete(ctx context.Context, userID, id uint64) error
+    ListByUser(ctx context.Context, userID uint64, startDate, endDate, eventType string) ([]model.CalendarEvent, error)
+    FindByID(ctx context.Context, userID, id uint64) (*model.CalendarEvent, error)
+    ExistsByUserEvent(ctx context.Context, userID, refID uint64, eventType string) (bool, error)
+    Create(ctx context.Context, event *model.CalendarEvent) error
+    Update(ctx context.Context, userID, id uint64, note string, remindBefore model.JSONStrings) error
+    Delete(ctx context.Context, userID, id uint64) error
+    // ★ 新增：批量获取用户已加入日历的 refId 列表（按 eventType 过滤）
+    ListRefIDsByUser(ctx context.Context, userID uint64, eventType string) ([]uint64, error)
 }
 
 type calendarRepository struct{ db *gorm.DB }
@@ -589,6 +591,16 @@ func (r *calendarRepository) Delete(ctx context.Context, userID, id uint64) erro
 	}
 	return nil
 }
+
+func (r *calendarRepository) ListRefIDsByUser(ctx context.Context, userID uint64, eventType string) ([]uint64, error) {
+    var refIDs []uint64
+    err := r.db.WithContext(ctx).
+        Model(&model.CalendarEvent{}).
+        Where("user_id = ? AND event_type = ?", userID, eventType).
+        Pluck("ref_id", &refIDs).Error
+    return refIDs, err
+}
+
 
 // AuditLogRepository 审计日志
 type AuditLogRepository interface {
