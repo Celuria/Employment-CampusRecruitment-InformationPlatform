@@ -102,8 +102,9 @@ CREATE TABLE IF NOT EXISTS `career_talks` (
   `company_size`     VARCHAR(64)     DEFAULT NULL COMMENT '公司规模',
   `start_time`       DATETIME        NOT NULL COMMENT '开始时间',
   `end_time`         DATETIME        DEFAULT NULL COMMENT '结束时间',
-  `location`         VARCHAR(256)    NOT NULL COMMENT '举办地点',
-  `campus`           VARCHAR(32)     DEFAULT NULL COMMENT '校区: main/shahe/online',
+  `location`         VARCHAR(256)    NOT NULL COMMENT '举办地点(校区+楼栋展示)',
+  `campus`           VARCHAR(32)     DEFAULT NULL COMMENT '校区: nanhu/mafangshan/yujiato/online',
+  `venue`            VARCHAR(128)    DEFAULT NULL COMMENT '具体楼栋地点',
   `format`           VARCHAR(16)     NOT NULL COMMENT '形式: online/offline/hybrid',
   `positions`        JSON            DEFAULT NULL COMMENT '面向岗位',
   `target_majors`    JSON            DEFAULT NULL COMMENT '面向专业',
@@ -134,8 +135,9 @@ CREATE TABLE IF NOT EXISTS `job_fairs` (
   `start_date`       DATE            NOT NULL COMMENT '开始日期',
   `end_date`         DATE            DEFAULT NULL COMMENT '结束日期',
   `start_time`       DATETIME        DEFAULT NULL COMMENT '开始时刻',
-  `location`         VARCHAR(256)    NOT NULL COMMENT '举办地点',
-  `campus`           VARCHAR(32)     DEFAULT NULL COMMENT '校区',
+  `location`         VARCHAR(256)    NOT NULL COMMENT '举办地点(校区+楼栋展示)',
+  `campus`           VARCHAR(32)     DEFAULT NULL COMMENT '校区: nanhu/mafangshan/yujiato/online',
+  `venue`            VARCHAR(128)    DEFAULT NULL COMMENT '具体楼栋地点',
   `company_count`    INT             DEFAULT NULL COMMENT '参与企业数量',
   `target_audience`  VARCHAR(256)    DEFAULT NULL COMMENT '面向对象',
   `target_majors`    JSON            DEFAULT NULL COMMENT '面向专业',
@@ -263,13 +265,13 @@ VALUES (
 -- 示例宣讲会（已发布）
 INSERT INTO `career_talks` (
   `title`, `company`, `industry_code`, `company_size`,
-  `start_time`, `location`, `campus`, `format`,
+  `start_time`, `location`, `campus`, `venue`, `format`,
   `positions`, `target_majors`, `publish_status`, `source_type`
 ) VALUES
 (
   '字节跳动2025校园招聘技术专场宣讲会',
   '字节跳动', 'internet', '10000人以上',
-  '2025-01-15 14:00:00', '本部校区 · 学术报告厅A301', 'main', 'hybrid',
+  '2025-01-15 14:00:00', '南湖校区 · 图书馆报告厅A301', 'nanhu', '图书馆报告厅A301', 'hybrid',
   JSON_ARRAY('研发工程师', '产品经理', '算法'),
   JSON_ARRAY('计算机', '软件工程'),
   'published', 'manual'
@@ -277,7 +279,7 @@ INSERT INTO `career_talks` (
 (
   '阿里巴巴2025校招「星耀计划」全球宣讲会',
   '阿里巴巴集团', 'internet', '10000人以上',
-  '2025-01-16 19:00:00', '沙河校区 · 教学楼B205', 'shahe', 'offline',
+  '2025-01-16 19:00:00', '马房山校区 · 东院教学楼B205', 'mafangshan', '东院教学楼B205', 'offline',
   JSON_ARRAY('Java开发', '数据分析师', '运营'),
   JSON_ARRAY('计算机', '信息管理'),
   'published', 'manual'
@@ -285,12 +287,12 @@ INSERT INTO `career_talks` (
 
 -- 示例双选会（已发布）
 INSERT INTO `job_fairs` (
-  `title`, `start_date`, `end_date`, `location`, `campus`,
+  `title`, `start_date`, `end_date`, `location`, `campus`, `venue`,
   `company_count`, `target_audience`, `deadline`, `publish_status`, `source_type`
 ) VALUES
 (
   '2025届春季大型双选会',
-  '2025-03-15', '2025-03-16', '本部校区 · 体育馆', 'main',
+  '2025-03-15', '2025-03-16', '余家头校区 · 体育馆', 'yujiato', '体育馆',
   120, '2025届全体毕业生',
   '2025-03-10 18:00:00', 'published', 'manual'
 );

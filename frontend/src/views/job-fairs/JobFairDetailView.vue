@@ -5,6 +5,7 @@ import { ElMessage } from 'element-plus'
 import { getJobFairDetailApi } from '@/api/modules/jobFair'
 import { addCalendarEventApi } from '@/api/modules/calendar'
 import { useAuthStore } from '@/stores'
+import { normalizeJobFair } from '@/utils/careerTalk'
 import type { JobFair } from '@/types'
 
 const route = useRoute()
@@ -18,7 +19,7 @@ const jobFair = ref<JobFair | null>(null)
 async function fetchDetail() {
   loading.value = true
   try {
-    jobFair.value = await getJobFairDetailApi(Number(route.params.id))
+    jobFair.value = normalizeJobFair(await getJobFairDetailApi(Number(route.params.id)))
   } catch {
     // 错误由拦截器处理
   } finally {

@@ -4,7 +4,7 @@ import { RouterLink } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { useAuthStore, useUserStore } from '@/stores'
-import { POSITION_SUGGESTIONS } from '@/constants/profile'
+import { getPositionsByCollege } from '@/constants/profile'
 import {
   CITY_SUGGESTIONS,
   COMPANY_SUGGESTIONS,
@@ -30,6 +30,10 @@ const focusCompanyOptions = computed(() => {
   const merged = new Set([...COMPANY_SUGGESTIONS, ...form.preferredCompanies])
   return Array.from(merged)
 })
+
+const positionOptions = computed(() =>
+  getPositionsByCollege(authStore.userInfo?.college),
+)
 
 const rules: FormRules<UserPreference> = {
   remindBefore: [
@@ -138,17 +142,27 @@ onMounted(() => {
             filterable
             allow-create
             default-first-option
-            placeholder="选择或输入意向岗位"
+            :placeholder="authStore.userInfo?.college ? '选择或输入意向岗位' : '请先在基本资料中选择学院'"
             class="w-full"
+            :disabled="!authStore.userInfo?.college"
           >
             <el-option
-              v-for="pos in POSITION_SUGGESTIONS"
+              v-for="pos in positionOptions"
               :key="pos"
               :label="pos"
               :value="pos"
             />
           </el-select>
-          <p class="mt-1.5 text-xs text-ink-400">保存后将同步至基本资料中的意向岗位</p>
+          <p class="mt-1.5 text-xs text-ink-400">
+            <template v-if="authStore.userInfo?.college">
+              根据您的学院（{{ authStore.userInfo.college }}）推荐岗位；保存后将同步至基本资料
+            </template>
+            <template v-else>
+              请先在
+              <RouterLink to="/profile/info" class="text-brand-600 underline">基本资料</RouterLink>
+              中选择学院
+            </template>
+          </p>
         </el-form-item>
 
         <el-form-item label="偏好城市">

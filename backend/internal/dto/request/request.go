@@ -100,8 +100,9 @@ type AdminCareerTalkCreateRequest struct {
 	CompanySize     string   `json:"companySize"`
 	StartTime       string   `json:"startTime" binding:"required"`
 	EndTime         string   `json:"endTime"`
-	Location        string   `json:"location" binding:"required,max=256"`
-	Campus          string   `json:"campus"`
+	Location        string   `json:"location"`
+	Campus          string   `json:"campus" binding:"required,oneof=nanhu mafangshan yujiato online"`
+	Venue           string   `json:"venue" binding:"required,max=128"`
 	Format          string   `json:"format" binding:"required,oneof=online offline hybrid"`
 	Positions       []string `json:"positions"`
 	TargetMajors    []string `json:"targetMajors"`
@@ -120,8 +121,8 @@ type AdminCareerTalkUpdateRequest struct {
 	CompanySize     *string  `json:"companySize"`
 	StartTime       *string  `json:"startTime"`
 	EndTime         *string  `json:"endTime"`
-	Location        *string  `json:"location"`
 	Campus          *string  `json:"campus"`
+	Venue           *string  `json:"venue"`
 	Format          *string  `json:"format"`
 	Positions       []string `json:"positions"`
 	TargetMajors    []string `json:"targetMajors"`
@@ -145,8 +146,8 @@ type AdminJobFairCreateRequest struct {
 	StartDate      string   `json:"startDate" binding:"required"`
 	EndDate        string   `json:"endDate"`
 	StartTime      string   `json:"startTime"`
-	Location       string   `json:"location" binding:"required,max=256"`
-	Campus         string   `json:"campus"`
+	Campus         string   `json:"campus" binding:"required,oneof=nanhu mafangshan yujiato online"`
+	Venue          string   `json:"venue" binding:"required,max=128"`
 	CompanyCount   *int     `json:"companyCount"`
 	TargetAudience string   `json:"targetAudience"`
 	TargetMajors   []string `json:"targetMajors"`
@@ -163,8 +164,8 @@ type AdminJobFairUpdateRequest struct {
 	StartDate      *string  `json:"startDate"`
 	EndDate        *string  `json:"endDate"`
 	StartTime      *string  `json:"startTime"`
-	Location       *string  `json:"location"`
 	Campus         *string  `json:"campus"`
+	Venue          *string  `json:"venue"`
 	CompanyCount   *int     `json:"companyCount"`
 	TargetAudience *string  `json:"targetAudience"`
 	TargetMajors   []string `json:"targetMajors"`

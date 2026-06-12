@@ -17,6 +17,7 @@ type AdminCareerTalkVO struct {
 	EndTime         *string `json:"endTime,omitempty"`
 	Location        string  `json:"location"`
 	Campus          string  `json:"campus"`
+	Venue           string  `json:"venue"`
 	Format          string  `json:"format"`
 	Positions       []string `json:"positions"`
 	TargetMajors    []string `json:"targetMajors"`
@@ -41,6 +42,7 @@ type AdminJobFairVO struct {
 	StartTime      *string  `json:"startTime,omitempty"`
 	Location       string   `json:"location"`
 	Campus         string   `json:"campus"`
+	Venue          string   `json:"venue"`
 	CompanyCount   *int     `json:"companyCount"`
 	TargetAudience string   `json:"targetAudience"`
 	TargetMajors   []string `json:"targetMajors"`
@@ -125,6 +127,7 @@ func ToAdminCareerTalkVO(t *model.CareerTalk) AdminCareerTalkVO {
 		EndTime:         formatTimePtr(t.EndTime),
 		Location:        t.Location,
 		Campus:          t.Campus,
+		Venue:           t.Venue,
 		Format:          string(t.Format),
 		Positions:       t.Positions,
 		TargetMajors:    t.TargetMajors,
@@ -150,6 +153,7 @@ func ToAdminJobFairVO(f *model.JobFair) AdminJobFairVO {
 		StartTime:      formatTimePtr(f.StartTime),
 		Location:       f.Location,
 		Campus:         f.Campus,
+		Venue:          f.Venue,
 		CompanyCount:   f.CompanyCount,
 		TargetAudience: f.TargetAudience,
 		TargetMajors:   f.TargetMajors,

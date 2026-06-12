@@ -6,8 +6,8 @@ import { useAuthStore } from '@/stores'
 import {
   COLLEGE_MAJOR_MAP,
   COLLEGE_OPTIONS,
+  getPositionsByCollege,
   GRADE_OPTIONS,
-  POSITION_SUGGESTIONS,
 } from '@/constants/profile'
 import type { UpdateProfileForm, UserInfo } from '@/types'
 
@@ -36,6 +36,8 @@ const majorOptions = computed(() => {
   if (!form.college) return []
   return COLLEGE_MAJOR_MAP[form.college] || []
 })
+
+const positionOptions = computed(() => getPositionsByCollege(form.college))
 
 const rules: FormRules<UpdateProfileForm> = {
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
@@ -68,6 +70,8 @@ watch(
   (college, prev) => {
     if (prev && college !== prev) {
       form.major = ''
+      const allowed = new Set(getPositionsByCollege(college))
+      form.targetPositions = form.targetPositions.filter((p) => allowed.has(p))
     }
   },
 )
@@ -240,16 +244,18 @@ onMounted(() => {
             filterable
             allow-create
             default-first-option
-            placeholder="选择或输入意向岗位，至少 1 个"
+            placeholder="请先选择学院，再选择或输入意向岗位"
             class="w-full"
+            :disabled="!form.college"
           >
             <el-option
-              v-for="pos in POSITION_SUGGESTIONS"
+              v-for="pos in positionOptions"
               :key="pos"
               :label="pos"
               :value="pos"
             />
           </el-select>
+          <p v-if="!form.college" class="mt-1.5 text-xs text-ink-400">请先选择学院，系统将推荐对应岗位</p>
         </el-form-item>
 
         <div class="flex flex-wrap gap-3 border-t border-ink-100 pt-6">

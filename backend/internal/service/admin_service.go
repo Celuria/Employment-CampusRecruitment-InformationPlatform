@@ -66,8 +66,9 @@ func (s *adminService) CreateCareerTalk(ctx context.Context, operatorID uint64, 
 		IndustryCode:    req.IndustryCode,
 		CompanySize:     req.CompanySize,
 		StartTime:       startTime,
-		Location:        req.Location,
 		Campus:          req.Campus,
+		Venue:           req.Venue,
+		Location:        model.FormatEventLocation(req.Campus, req.Venue),
 		Format:          model.EventFormat(req.Format),
 		Positions:       model.JSONStrings(req.Positions),
 		TargetMajors:    model.JSONStrings(req.TargetMajors),
@@ -136,11 +137,14 @@ func (s *adminService) UpdateCareerTalk(ctx context.Context, operatorID, id uint
 			talk.EndTime = &endTime
 		}
 	}
-	if req.Location != nil {
-		talk.Location = *req.Location
-	}
 	if req.Campus != nil {
 		talk.Campus = *req.Campus
+	}
+	if req.Venue != nil {
+		talk.Venue = *req.Venue
+	}
+	if req.Campus != nil || req.Venue != nil {
+		talk.Location = model.FormatEventLocation(talk.Campus, talk.Venue)
 	}
 	if req.Format != nil {
 		talk.Format = model.EventFormat(*req.Format)
@@ -216,8 +220,9 @@ func (s *adminService) CreateJobFair(ctx context.Context, operatorID uint64, req
 	fair := &model.JobFair{
 		Title:          req.Title,
 		StartDate:      startDate,
-		Location:       req.Location,
 		Campus:         req.Campus,
+		Venue:          req.Venue,
+		Location:       model.FormatEventLocation(req.Campus, req.Venue),
 		CompanyCount:   req.CompanyCount,
 		TargetAudience: req.TargetAudience,
 		TargetMajors:   model.JSONStrings(req.TargetMajors),
@@ -301,11 +306,14 @@ func (s *adminService) UpdateJobFair(ctx context.Context, operatorID, id uint64,
 			fair.StartTime = &startTime
 		}
 	}
-	if req.Location != nil {
-		fair.Location = *req.Location
-	}
 	if req.Campus != nil {
 		fair.Campus = *req.Campus
+	}
+	if req.Venue != nil {
+		fair.Venue = *req.Venue
+	}
+	if req.Campus != nil || req.Venue != nil {
+		fair.Location = model.FormatEventLocation(fair.Campus, fair.Venue)
 	}
 	if req.CompanyCount != nil {
 		fair.CompanyCount = req.CompanyCount

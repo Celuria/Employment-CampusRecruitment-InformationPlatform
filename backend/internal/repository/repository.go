@@ -521,6 +521,7 @@ type CalendarRepository interface {
 	Create(ctx context.Context, event *model.CalendarEvent) error
 	Update(ctx context.Context, userID, id uint64, note string, remindBefore model.JSONStrings) error
 	Delete(ctx context.Context, userID, id uint64) error
+	ListUserRefSet(ctx context.Context, userID uint64) (map[string]map[uint64]bool, error)
 }
 
 type calendarRepository struct{ db *gorm.DB }
@@ -588,6 +589,28 @@ func (r *calendarRepository) Delete(ctx context.Context, userID, id uint64) erro
 		return gorm.ErrRecordNotFound
 	}
 	return nil
+}
+
+func (r *calendarRepository) ListUserRefSet(ctx context.Context, userID uint64) (map[string]map[uint64]bool, error) {
+	if userID == 0 {
+		return nil, nil
+	}
+	var events []model.CalendarEvent
+	if err := r.db.WithContext(ctx).
+		Select("event_type", "ref_id").
+		Where("user_id = ?", userID).
+		Find(&events).Error; err != nil {
+		return nil, err
+	}
+	set := make(map[string]map[uint64]bool)
+	for _, e := range events {
+		key := string(e.EventType)
+		if set[key] == nil {
+			set[key] = make(map[uint64]bool)
+		}
+		set[key][e.RefID] = true
+	}
+	return set, nil
 }
 
 // AuditLogRepository 审计日志

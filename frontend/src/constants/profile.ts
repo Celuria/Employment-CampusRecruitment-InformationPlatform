@@ -20,16 +20,64 @@ export const COLLEGE_MAJOR_MAP: Record<string, string[]> = {
 
 export const COLLEGE_OPTIONS = Object.keys(COLLEGE_MAJOR_MAP)
 
-/** 常见意向岗位（可自定义输入） */
-export const POSITION_SUGGESTIONS = [
-  'Java 开发',
-  '后端开发',
-  '前端开发',
-  '产品经理',
-  '数据分析',
-  '算法工程师',
-  '测试工程师',
-  '运维工程师',
-  'UI 设计',
-  '运营',
-]
+/** 学院与意向岗位字典 */
+export const COLLEGE_POSITION_MAP: Record<string, string[]> = {
+  计算机学院: [
+    '前端开发',
+    '后端开发',
+    'Java 开发',
+    '算法工程师',
+    '测试工程师',
+    '运维工程师',
+    '数据分析',
+    '产品经理',
+  ],
+  经济管理学院: [
+    '会计',
+    '财务',
+    '审计',
+    '金融分析师',
+    '市场营销',
+    '人力资源管理',
+    '产品经理',
+    '运营',
+  ],
+  机械工程学院: [
+    '机械设计',
+    '结构工程师',
+    '工艺工程师',
+    '质量工程师',
+    '智能制造工程师',
+    '产品经理',
+  ],
+  电子信息学院: [
+    '硬件工程师',
+    '嵌入式开发',
+    '通信工程师',
+    'FPGA 开发',
+    '自动化工程师',
+    '测试工程师',
+  ],
+  外国语学院: [
+    '翻译',
+    '外贸业务',
+    '英语教师',
+    '跨境电商运营',
+    '市场营销',
+    '人力资源',
+  ],
+  数学学院: [
+    '数据分析',
+    '算法工程师',
+    '量化分析师',
+    '精算师',
+    '财务建模',
+    '统计分析师',
+  ],
+}
+
+/** 根据学院获取推荐意向岗位；未选学院时返回空列表 */
+export function getPositionsByCollege(college?: string): string[] {
+  if (!college) return []
+  return COLLEGE_POSITION_MAP[college] ?? []
+}

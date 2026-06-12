@@ -9,6 +9,7 @@ import { addCalendarEventApi } from '@/api/modules/calendar'
 import { useAuthStore } from '@/stores'
 import { usePagination } from '@/composables/usePagination'
 import { CAMPUS_OPTIONS } from '@/constants'
+import { normalizeJobFair } from '@/utils/careerTalk'
 import type { JobFair, JobFairQuery } from '@/types'
 
 const router = useRouter()
@@ -39,7 +40,7 @@ async function fetchList() {
     if (filters.campus !== 'all') params.campus = filters.campus
 
     const res = await getJobFairListApi(params)
-    list.value = res.list
+    list.value = res.list.map(normalizeJobFair)
     setTotal(Number(res.total))
   } catch {
     // 错误由拦截器处理

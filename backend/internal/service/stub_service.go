@@ -11,23 +11,28 @@ import (
 	"gorm.io/gorm"
 )
 
-type careerTalkService struct{ repo repository.CareerTalkRepository }
-
-func NewCareerTalkService(repo repository.CareerTalkRepository) CareerTalkService {
-	return &careerTalkService{repo: repo}
+type careerTalkService struct {
+	repo     repository.CareerTalkRepository
+	calendar repository.CalendarRepository
 }
 
-func (s *careerTalkService) List(ctx context.Context, q *request.CareerTalkQuery, _ uint64) (interface{}, int64, int, int, error) {
+func NewCareerTalkService(repo repository.CareerTalkRepository, calendar repository.CalendarRepository) CareerTalkService {
+	return &careerTalkService{repo: repo, calendar: calendar}
+}
+
+func (s *careerTalkService) List(ctx context.Context, q *request.CareerTalkQuery, userID uint64) (interface{}, int64, int, int, error) {
 	pq := &pagination.Query{Page: q.Page, PageSize: q.PageSize}
 	page, pageSize := pq.Normalize()
 	list, total, err := s.repo.ListPublished(ctx, q, page, pageSize)
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
+	refSet := loadUserCalendarRefSet(ctx, s.calendar, userID)
+	list = enrichCareerTalksInCalendar(list, refSet)
 	return list, total, page, pageSize, nil
 }
 
-func (s *careerTalkService) GetByID(ctx context.Context, id, _ uint64) (interface{}, error) {
+func (s *careerTalkService) GetByID(ctx context.Context, id, userID uint64) (interface{}, error) {
 	talk, err := s.repo.FindPublishedByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -35,6 +40,8 @@ func (s *careerTalkService) GetByID(ctx context.Context, id, _ uint64) (interfac
 		}
 		return nil, apperrors.ErrInternalServer
 	}
+	refSet := loadUserCalendarRefSet(ctx, s.calendar, userID)
+	enrichCareerTalkInCalendar(talk, refSet)
 	return talk, nil
 }
 
@@ -57,23 +64,28 @@ func (s *careerTalkService) ListHotCompanies(ctx context.Context, limit int) (in
 	return list, nil
 }
 
-type jobFairService struct{ repo repository.JobFairRepository }
-
-func NewJobFairService(repo repository.JobFairRepository) JobFairService {
-	return &jobFairService{repo: repo}
+type jobFairService struct {
+	repo     repository.JobFairRepository
+	calendar repository.CalendarRepository
 }
 
-func (s *jobFairService) List(ctx context.Context, q *request.JobFairQuery, _ uint64) (interface{}, int64, int, int, error) {
+func NewJobFairService(repo repository.JobFairRepository, calendar repository.CalendarRepository) JobFairService {
+	return &jobFairService{repo: repo, calendar: calendar}
+}
+
+func (s *jobFairService) List(ctx context.Context, q *request.JobFairQuery, userID uint64) (interface{}, int64, int, int, error) {
 	pq := &pagination.Query{Page: q.Page, PageSize: q.PageSize}
 	page, pageSize := pq.Normalize()
 	list, total, err := s.repo.ListPublished(ctx, q, page, pageSize)
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
+	refSet := loadUserCalendarRefSet(ctx, s.calendar, userID)
+	list = enrichJobFairsInCalendar(list, refSet)
 	return list, total, page, pageSize, nil
 }
 
-func (s *jobFairService) GetByID(ctx context.Context, id, _ uint64) (interface{}, error) {
+func (s *jobFairService) GetByID(ctx context.Context, id, userID uint64) (interface{}, error) {
 	fair, err := s.repo.FindPublishedByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -81,6 +93,8 @@ func (s *jobFairService) GetByID(ctx context.Context, id, _ uint64) (interface{}
 		}
 		return nil, apperrors.ErrInternalServer
 	}
+	refSet := loadUserCalendarRefSet(ctx, s.calendar, userID)
+	enrichJobFairInCalendar(fair, refSet)
 	return fair, nil
 }
 

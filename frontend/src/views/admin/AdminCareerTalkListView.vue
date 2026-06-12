@@ -9,6 +9,8 @@ import {
   batchAdminCareerTalkStatusApi,
 } from '@/api/modules/admin/careerTalk'
 import { CAMPUS_OPTIONS, INDUSTRY_OPTIONS } from '@/constants'
+import { toApiDateTime, toDatePickerDateTime } from '@/utils/format'
+import { normalizeCampusValue, parseVenueFromRecord } from '@/utils/location'
 import type { AdminCareerTalkForm, AdminCareerTalkVO, PublishStatus } from '@/types/admin'
 
 const loading = ref(false)
@@ -37,8 +39,8 @@ const emptyForm = (): AdminCareerTalkForm => ({
   companySize: '',
   startTime: '',
   endTime: '',
-  location: '',
-  campus: 'main',
+  campus: 'nanhu',
+  venue: '',
   format: 'offline',
   positions: [],
   targetMajors: [],
@@ -99,10 +101,10 @@ function openEdit(row: AdminCareerTalkVO) {
     company: row.company,
     industryCode: row.industryCode,
     companySize: row.companySize,
-    startTime: row.startTime.slice(0, 16),
-    endTime: row.endTime?.slice(0, 16),
-    location: row.location,
-    campus: row.campus,
+    startTime: toDatePickerDateTime(row.startTime),
+    endTime: toDatePickerDateTime(row.endTime),
+    campus: normalizeCampusValue(row.campus) || 'nanhu',
+    venue: parseVenueFromRecord(row),
     format: row.format,
     positions: row.positions || [],
     targetMajors: row.targetMajors || [],
@@ -118,16 +120,22 @@ function openEdit(row: AdminCareerTalkVO) {
 }
 
 function buildPayload(): AdminCareerTalkForm {
+  const startTime = toApiDateTime(form.value.startTime)
+  const endTime = toApiDateTime(form.value.endTime)
   return {
     ...form.value,
     positions: positionsText.value.split(/[,，]/).map((s) => s.trim()).filter(Boolean),
     targetMajors: majorsText.value.split(/[,，]/).map((s) => s.trim()).filter(Boolean),
-    startTime: form.value.startTime.replace('T', ' '),
-    endTime: form.value.endTime?.replace('T', ' '),
+    startTime: startTime ?? '',
+    endTime: endTime ?? '',
   }
 }
 
 async function handleSave() {
+  if (!form.value.startTime) {
+    ElMessage.warning('请填写开始时间')
+    return
+  }
   saving.value = true
   try {
     const payload = buildPayload()
@@ -256,11 +264,13 @@ onMounted(fetchList)
           <el-date-picker v-model="form.startTime" type="datetime" placeholder="开始时间 *" value-format="YYYY-MM-DDTHH:mm:ss" class="!w-full" />
           <el-date-picker v-model="form.endTime" type="datetime" placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" class="!w-full" />
         </div>
-        <el-input v-model="form.location" placeholder="举办地点 *" />
-        <div class="grid grid-cols-3 gap-3">
-          <el-select v-model="form.campus" placeholder="校区">
+        <div class="grid grid-cols-2 gap-3">
+          <el-select v-model="form.campus" placeholder="校区 *">
             <el-option v-for="o in CAMPUS_OPTIONS.filter((c) => c.value !== 'all')" :key="o.value" :label="o.label" :value="o.value" />
           </el-select>
+          <el-input v-model="form.venue" placeholder="具体楼栋/场地，如图书馆报告厅A301" />
+        </div>
+        <div class="grid grid-cols-3 gap-3">
           <el-select v-model="form.format" placeholder="形式">
             <el-option label="线下" value="offline" />
             <el-option label="线上" value="online" />

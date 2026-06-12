@@ -9,6 +9,8 @@ import {
   batchAdminJobFairStatusApi,
 } from '@/api/modules/admin/jobFair'
 import { CAMPUS_OPTIONS } from '@/constants'
+import { toApiDateTime, toDatePickerDate, toDatePickerDateTime } from '@/utils/format'
+import { normalizeCampusValue, parseVenueFromRecord } from '@/utils/location'
 import type { AdminJobFairForm, AdminJobFairVO, PublishStatus } from '@/types/admin'
 
 const loading = ref(false)
@@ -34,8 +36,8 @@ const emptyForm = (): AdminJobFairForm => ({
   startDate: '',
   endDate: '',
   startTime: '',
-  location: '',
-  campus: 'main',
+  campus: 'nanhu',
+  venue: '',
   companyCount: undefined,
   targetAudience: '',
   targetMajors: [],
@@ -90,15 +92,15 @@ function openEdit(row: AdminJobFairVO) {
   editing.value = row
   form.value = {
     title: row.title,
-    startDate: row.startDate,
-    endDate: row.endDate,
-    startTime: row.startTime?.slice(0, 16),
-    location: row.location,
-    campus: row.campus,
+    startDate: toDatePickerDate(row.startDate),
+    endDate: toDatePickerDate(row.endDate),
+    startTime: toDatePickerDateTime(row.startTime),
+    campus: normalizeCampusValue(row.campus) || 'nanhu',
+    venue: parseVenueFromRecord(row),
     companyCount: row.companyCount,
     targetAudience: row.targetAudience,
     targetMajors: row.targetMajors || [],
-    deadline: row.deadline?.slice(0, 16),
+    deadline: toDatePickerDateTime(row.deadline),
     detailUrl: row.detailUrl,
     sourceUrl: row.sourceUrl,
     description: row.description,
@@ -112,12 +114,17 @@ function buildPayload(): AdminJobFairForm {
   return {
     ...form.value,
     targetMajors: majorsText.value.split(/[,，]/).map((s) => s.trim()).filter(Boolean),
-    startTime: form.value.startTime?.replace('T', ' '),
-    deadline: form.value.deadline?.replace('T', ' '),
+    startTime: toApiDateTime(form.value.startTime) ?? '',
+    deadline: toApiDateTime(form.value.deadline) ?? '',
+    endDate: form.value.endDate || undefined,
   }
 }
 
 async function handleSave() {
+  if (!form.value.startDate) {
+    ElMessage.warning('请填写开始日期')
+    return
+  }
   saving.value = true
   try {
     const payload = buildPayload()
@@ -231,11 +238,13 @@ onMounted(fetchList)
           <el-date-picker v-model="form.startDate" type="date" placeholder="开始日期 *" value-format="YYYY-MM-DD" class="!w-full" />
           <el-date-picker v-model="form.endDate" type="date" placeholder="结束日期" value-format="YYYY-MM-DD" class="!w-full" />
         </div>
-        <el-input v-model="form.location" placeholder="举办地点 *" />
-        <div class="grid grid-cols-3 gap-3">
-          <el-select v-model="form.campus" placeholder="校区">
+        <div class="grid grid-cols-2 gap-3">
+          <el-select v-model="form.campus" placeholder="校区 *">
             <el-option v-for="o in CAMPUS_OPTIONS.filter((c) => c.value !== 'all')" :key="o.value" :label="o.label" :value="o.value" />
           </el-select>
+          <el-input v-model="form.venue" placeholder="具体楼栋/场地，如体育馆" />
+        </div>
+        <div class="grid grid-cols-3 gap-3">
           <el-input-number v-model="form.companyCount" :min="0" placeholder="企业数" class="!w-full" />
           <el-select v-model="form.publishStatus" placeholder="发布状态">
             <el-option v-for="o in PUBLISH_OPTIONS" :key="o.value" :label="o.label" :value="o.value" />

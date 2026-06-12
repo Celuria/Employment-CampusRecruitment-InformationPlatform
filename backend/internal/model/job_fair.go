@@ -11,6 +11,7 @@ type JobFair struct {
 	StartTime       *time.Time    `json:"startTime"`
 	Location        string        `gorm:"size:256;not null" json:"location"`
 	Campus          string        `gorm:"size:32" json:"campus"`
+	Venue           string        `gorm:"size:128" json:"venue"`
 	CompanyCount    *int          `json:"companyCount"`
 	TargetAudience  string        `gorm:"size:256" json:"targetAudience"`
 	TargetMajors    JSONStrings   `gorm:"type:json" json:"targetMajors"`
@@ -25,6 +26,7 @@ type JobFair struct {
 	UpdatedBy       *uint64       `json:"updatedBy"`
 	CreatedAt       time.Time     `json:"createdAt"`
 	UpdatedAt       time.Time     `json:"updatedAt"`
+	InCalendar      bool          `json:"inCalendar,omitempty" gorm:"-"`
 }
 
 func (JobFair) TableName() string { return "job_fairs" }

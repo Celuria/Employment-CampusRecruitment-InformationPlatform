@@ -20,10 +20,12 @@ export const INDUSTRY_OPTIONS = [
   { label: '咨询', value: 'consulting' },
 ] as const
 
+/** 校区筛选与表单选项 */
 export const CAMPUS_OPTIONS = [
   { label: '全部校区', value: 'all' },
-  { label: '本部校区', value: 'main' },
-  { label: '沙河校区', value: 'shahe' },
+  { label: '南湖校区', value: 'nanhu' },
+  { label: '马房山校区', value: 'mafangshan' },
+  { label: '余家头校区', value: 'yujiato' },
   { label: '线上', value: 'online' },
 ] as const
 

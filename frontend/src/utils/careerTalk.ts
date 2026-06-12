@@ -1,12 +1,9 @@
-import { CAMPUS_OPTIONS, INDUSTRY_OPTIONS } from '@/constants'
-import type { CareerTalk } from '@/types'
+import { INDUSTRY_OPTIONS } from '@/constants'
+import { formatEventLocation, getCampusLabel, normalizeCampusValue } from '@/utils/location'
+import type { CareerTalk, JobFair } from '@/types'
 
 const industryLabelMap = Object.fromEntries(
   INDUSTRY_OPTIONS.filter((o) => o.value !== 'all').map((o) => [o.value, o.label]),
-)
-
-const campusLabelMap = Object.fromEntries(
-  CAMPUS_OPTIONS.filter((o) => o.value !== 'all').map((o) => [o.value, o.label.replace('校区', '')]),
 )
 
 const UPCOMING_COLORS = [
@@ -30,7 +27,8 @@ export function formatUpcomingLabel(startTime: string, campus?: string) {
 
   const now = new Date()
   const timeStr = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-  const campusShort = campus ? (campusLabelMap[campus] ?? campus) : ''
+  const normalized = normalizeCampusValue(campus)
+  const campusShort = normalized ? getCampusLabel(normalized).replace('校区', '') : ''
 
   let dayLabel: string
   if (isSameDay(date, now)) {
@@ -54,11 +52,25 @@ export function getUpcomingColor(index: number) {
 export function normalizeCareerTalk(talk: CareerTalk): CareerTalk {
   const startMs = new Date(talk.startTime).getTime()
   const isEnded = !Number.isNaN(startMs) && startMs < Date.now()
+  const campus = normalizeCampusValue(talk.campus)
 
   return {
     ...talk,
+    campus,
     industry: talk.industry || industryLabelMap[talk.industryCode ?? ''] || talk.industryCode || '',
     status: talk.status ?? (isEnded ? 'ended' : 'upcoming'),
     positions: talk.positions ?? [],
+    inCalendar: talk.inCalendar ?? false,
+    location: formatEventLocation(campus, talk.venue, talk.location),
+  }
+}
+
+export function normalizeJobFair(fair: JobFair): JobFair {
+  const campus = normalizeCampusValue(fair.campus)
+  return {
+    ...fair,
+    campus,
+    location: formatEventLocation(campus, fair.venue, fair.location),
+    inCalendar: fair.inCalendar ?? false,
   }
 }

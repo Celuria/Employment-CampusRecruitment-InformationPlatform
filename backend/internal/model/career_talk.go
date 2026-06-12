@@ -36,6 +36,7 @@ type CareerTalk struct {
 	EndTime         *time.Time    `json:"endTime"`
 	Location        string        `gorm:"size:256;not null" json:"location"`
 	Campus          string        `gorm:"size:32" json:"campus"`
+	Venue           string        `gorm:"size:128" json:"venue"`
 	Format          EventFormat   `gorm:"size:16;not null" json:"format"`
 	Positions       JSONStrings   `gorm:"type:json" json:"positions"`
 	TargetMajors    JSONStrings   `gorm:"type:json" json:"targetMajors"`
@@ -50,6 +51,7 @@ type CareerTalk struct {
 	UpdatedBy       *uint64       `json:"updatedBy"`
 	CreatedAt       time.Time     `json:"createdAt"`
 	UpdatedAt       time.Time     `json:"updatedAt"`
+	InCalendar      bool          `json:"inCalendar,omitempty" gorm:"-"`
 }
 
 func (CareerTalk) TableName() string { return "career_talks" }

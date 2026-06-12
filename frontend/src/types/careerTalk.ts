@@ -11,6 +11,7 @@ export interface CareerTalk {
   endTime?: string
   location: string
   campus?: string
+  venue?: string
   format: EventFormat
   positions: string[]
   targetMajors?: string[]
@@ -48,6 +49,8 @@ export interface JobFair {
   startDate: string
   endDate?: string
   location: string
+  campus?: string
+  venue?: string
   companyCount?: number
   targetAudience?: string
   deadline?: string

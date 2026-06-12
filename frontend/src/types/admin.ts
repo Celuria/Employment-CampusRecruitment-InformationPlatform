@@ -14,6 +14,7 @@ export interface AdminCareerTalkVO {
   endTime?: string
   location: string
   campus?: string
+  venue?: string
   format: EventFormat
   positions: string[]
   targetMajors?: string[]
@@ -46,8 +47,8 @@ export interface AdminCareerTalkForm {
   companySize?: string
   startTime: string
   endTime?: string
-  location: string
-  campus?: string
+  campus: string
+  venue: string
   format: EventFormat
   positions: string[]
   targetMajors: string[]
@@ -66,6 +67,7 @@ export interface AdminJobFairVO {
   startTime?: string
   location: string
   campus?: string
+  venue?: string
   companyCount?: number
   targetAudience?: string
   targetMajors?: string[]
@@ -95,8 +97,8 @@ export interface AdminJobFairForm {
   startDate: string
   endDate?: string
   startTime?: string
-  location: string
-  campus?: string
+  campus: string
+  venue: string
   companyCount?: number
   targetAudience?: string
   targetMajors: string[]

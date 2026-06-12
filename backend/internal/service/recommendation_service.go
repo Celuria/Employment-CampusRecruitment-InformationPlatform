@@ -21,6 +21,7 @@ type recommendationService struct {
 	prefRepo       repository.PreferenceRepository
 	careerTalkRepo repository.CareerTalkRepository
 	jobFairRepo    repository.JobFairRepository
+	calendarRepo   repository.CalendarRepository
 }
 
 func NewRecommendationService(
@@ -28,12 +29,14 @@ func NewRecommendationService(
 	prefRepo repository.PreferenceRepository,
 	careerTalkRepo repository.CareerTalkRepository,
 	jobFairRepo repository.JobFairRepository,
+	calendarRepo repository.CalendarRepository,
 ) RecommendationService {
 	return &recommendationService{
 		userRepo:       userRepo,
 		prefRepo:       prefRepo,
 		careerTalkRepo: careerTalkRepo,
 		jobFairRepo:    jobFairRepo,
+		calendarRepo:   calendarRepo,
 	}
 }
 
@@ -101,6 +104,10 @@ func (s *recommendationService) List(ctx context.Context, userID uint64, c *gin.
 	list := make([]dtoresp.RecommendationVO, 0, end-start)
 	for _, item := range ranked[start:end] {
 		list = append(list, item.vo)
+	}
+	refSet := loadUserCalendarRefSet(ctx, s.calendarRepo, userID)
+	for i := range list {
+		list[i].InCalendar = isInUserCalendar(refSet, list[i].EventType, list[i].RefID)
 	}
 
 	return &dtoresp.RecommendationListResult{
